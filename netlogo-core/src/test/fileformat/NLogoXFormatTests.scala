@@ -12,7 +12,9 @@ import
   org.nlogo.api.ComponentSerialization
 
 import
-  org.nlogo.core.{ Button, DummyCompilationEnvironment, DummyExtensionManager, Model, View, Widget }
+  org.nlogo.core.{ Button, DummyCompilationEnvironment, DummyExtensionManager, model, Model, Shape, View, Widget },
+    model.XmlShape,
+    Shape.{ LinkShape, VectorShape }
 
 import
   org.nlogo.core.model.DummyXML._
@@ -130,4 +132,24 @@ class NLogoXInterfaceComponentTest extends NLogoXFormatTest[Seq[Widget]] {
     "view is missing required attributes 'left', 'top', 'right', 'bottom'")
   testRoundTripsObjectForm("default view", Seq(View()))
   testRoundTripsObjectForm("view and button", Seq(View(), Button(source = Some("abc"), 0, 0, 0, 0)))
+}
+
+class NLogoXShapeComponentTest extends NLogoXFormatTest[Seq[VectorShape]] {
+  def subject = nlogoXFormat.shapesComponent
+  def modelComponent(model: Model): Seq[VectorShape] = model.turtleShapes
+  def attachComponent(shapes: Seq[VectorShape]): Model = Model(turtleShapes = shapes)
+
+  testDeserializes("empty shapes to default shapes", Elem("shapes", Seq(), Seq()), Model.defaultShapes)
+  val defaultShape = XmlShape.convertVectorShape(Model.defaultShapes.find(_.name == "default").get)
+  testRoundTripsObjectForm("default-only shape list", Seq(defaultShape))
+}
+
+class NLogoXLinkShapeComponentTest extends NLogoXFormatTest[Seq[LinkShape]] {
+  def subject = nlogoXFormat.linkShapesComponent
+  def modelComponent(model: Model): Seq[LinkShape] = model.linkShapes
+  def attachComponent(shapes: Seq[LinkShape]): Model = Model(linkShapes = shapes)
+
+  testDeserializes("empty link shapes to default shapes", Elem("linkShapes", Seq(), Seq()), Model.defaultLinkShapes)
+  val defaultShape = XmlShape.convertLinkShape(Model.defaultLinkShapes.find(_.name == "default").get)
+  testRoundTripsObjectForm("default-only link shape list", Seq(defaultShape))
 }
