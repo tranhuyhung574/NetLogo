@@ -527,7 +527,7 @@ object XmlReaderGenerator {
         else {
           val addPath =
             if (complexType.content.elements.isInstanceOf[Choice]) ""
-            else s""".bimap(_.atPath("${complexType.name}"), identity _)"""
+            else s""".bimap(_.atPath(name), identity _)"""
           val applyMap =
             if (assignments.length == 1) "Apply[ReadValidation#l].map"
             else s"Apply[ReadValidation#l].map${assignments.length}"
@@ -596,7 +596,7 @@ object XmlReaderGenerator {
         s"""|  class ${widgetName}Reader(${name}) extends ${base} {
             |    type ReadValidation = ({ type l[A] = Validated[ParseError, A] })
             |    def read(xml: Element): Validated[ParseError, ${complexType.typeName}] = {
-            |    //  println(xml)
+            |      // println(xml)
             |${declStrings.mkString("\n")}
             |${assignmentStrings.mkString("\n")}
             |    }
@@ -674,7 +674,7 @@ object XmlReaderGenerator {
         case (_, _, _, DataType.DeferredType(name)) =>
           s".flatMap(new ${name.capitalize}Reader(${elemName.quoted}).read)"
         case (_, _, _, DataType.NestedComplexType(content)) =>
-          generateContentReader(elemName, content)
+          generateContentReader(elemName, elemName.quoted, content)
           s".flatMap(${generator.decls.last.name}.read _) // ${content.toString}"
         case (_, _, _, other)                       => s".map(XmlReader.childText _).flatMap(${stringToType(elemName.quoted, other)})"
         case _ => throw new Exception("Don't know how to read element: " + elemName + " of type " + tpe)
@@ -717,7 +717,7 @@ object XmlReaderGenerator {
           s"new ${ctr.refName.capitalize}Reader()"
       }
 
-    def generateContentReader(name: String, content: ComplexTypeContent)(implicit types: Map[String, ComplexType], generator: ReaderGenerator): Unit = {
+    def generateContentReader(name: String, tagName: String, content: ComplexTypeContent)(implicit types: Map[String, ComplexType], generator: ReaderGenerator): Unit = {
       content.attributes.map { attr =>
         generator.declare(s"${attr.name.scalaSafe}AttributeReader", generateAttributeReader(attr))
         if (! content.isPassThrough) {
@@ -752,7 +752,7 @@ object XmlReaderGenerator {
             case _ => 0
           }
           generator.declare(s"${name}SequenceReader",
-            s"""XmlReader.sequenceElementReader("${name}", ${min}, ${subreader})""")
+            s"""XmlReader.sequenceElementReader(${tagName}, ${min}, ${subreader})""")
           generator.assignment(s"${name}SequenceReader.read(xml)", Seq(finalFieldName), name, variadic)
         case Sequence(es, fieldName, variadic) =>
           def chainReader(elemsToReadName: String, e: SequenceChild): String = {
@@ -1002,7 +1002,8 @@ object XmlReaderGenerator {
     def generateComplexTypeReader(types: Map[String, ComplexType])(spec: ComplexType): String = {
       implicit val tpes = types
       implicit val generator = new ReaderGenerator(spec, 4)
-      generateContentReader(spec.name, spec.content)
+      val name = if (spec.isTopType) spec.name.quoted else "name"
+      generateContentReader(spec.name, name, spec.content)
       generator.buildReader
     }
 

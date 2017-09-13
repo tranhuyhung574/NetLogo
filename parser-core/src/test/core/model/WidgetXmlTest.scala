@@ -294,10 +294,8 @@ class WidgetXmlTest extends FunSuite {
         namedText("numberChoice", "0.0"),
         namedText("stringChoice", "abc"),
         namedText("booleanChoice", "true"),
-        Elem("listChoice", Seq(),
-          Seq(namedText("boolean", "true"), namedText("string", "def")))))))
+        Elem("listChoice", Seq(), Seq(namedText("boolean", "true"), namedText("string", "def")))))))
 
-    println(readToError(xml))
     assertResult(Chooser(Some("foo"), 150, 200, 250, 300, Some("foo"),
       List(
         ChooseableDouble(Double.box(0.0)),
@@ -418,6 +416,7 @@ class WidgetXmlTest extends FunSuite {
 
             Seq(namedText("setup", "setup-pen"), namedText("update", "update-pen"), namedText("display", "pen-name")))))))
 
+    // println(readToError(xml))
     val plotResult = readToWidget(xml)
     val pen = Pen("pen-name", 0.5, 0, 10, false, "setup-pen", "update-pen")
     assertResult(

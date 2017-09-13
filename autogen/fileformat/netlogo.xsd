@@ -356,7 +356,7 @@
             <xsd:appinfo boxed="true" />
           </xsd:annotation>
         </xsd:element>
-        <xsd:element ref="logoList" />
+        <xsd:element name="logoList" type="logoList" />
       </xsd:choice>
     </xsd:sequence>
   </xsd:complexType>
@@ -393,7 +393,7 @@
             <xsd:appinfo passThrough="true" className="List[Pen]" />
           </xsd:annotation>
           <xsd:sequence>
-            <xsd:element ref="pen" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="pen" type="pen" minOccurs="0" maxOccurs="unbounded" />
           </xsd:sequence>
         </xsd:complexType>
       </xsd:element>
