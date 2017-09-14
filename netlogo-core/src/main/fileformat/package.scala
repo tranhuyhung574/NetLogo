@@ -6,7 +6,7 @@ import java.nio.file.Path
 
 import org.nlogo.api.{ AutoConvertable, ConfigurableModelLoader }
 import org.nlogo.core.{ CompilationEnvironment, Dialect, ExtensionManager, Model, LiteralParser }
-import org.nlogo.core.model.WidgetReader
+import org.nlogo.core.model.{ WidgetReader, HubNetWidgetReader }
 
 package object fileformat {
   type ModelConversion = (Model, Path) => ConversionResult
@@ -18,7 +18,7 @@ package object fileformat {
       Map()
 
   def hubNetReaders: Map[String, WidgetReader] =
-    HubNetWidgetReaders.additionalReaders
+    HubNetWidgetReader.defaultReaders
 
   def defaultAutoConvertables: Seq[AutoConvertable] = Seq(WidgetConverter, NLogoLabConverter)
 
