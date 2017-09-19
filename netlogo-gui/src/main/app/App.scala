@@ -17,7 +17,7 @@ import org.nlogo.awt.UserCancelException
 import org.nlogo.core.{ AgentKind, CompilerException, Dialect, I18N, Model,
   Shape, Widget => CoreWidget }, Shape.{ LinkShape, VectorShape }
 import org.nlogo.core.model.WidgetReader
-import org.nlogo.fileformat, fileformat.{ ModelConversion, ModelConverter, NLogoFormat }
+import org.nlogo.fileformat, fileformat.{ ModelConversion, ModelConverter, ScalaXmlElementFactory }
 import org.nlogo.log.Logger
 import org.nlogo.nvm.{ DefaultCompilerServices, PresentationCompilerInterface, Workspace }
 import org.nlogo.shape.{ LinkShapesManagerInterface, ShapesManagerInterface, TurtleShapesManagerInterface }
@@ -87,6 +87,7 @@ object App{
 
     if (Version.systemDynamicsAvailable) {
       pico.add("org.nlogo.sdm.gui.NLogoGuiSDMFormat")
+      pico.add(classOf[AddableLoader], "org.nlogo.sdm.gui.NLogoXGuiSDMFormat", new ConstantParameter(ScalaXmlElementFactory))
     }
     pico.addScalaObject("org.nlogo.sdm.gui.SDMGuiAutoConvertable")
 
@@ -103,14 +104,12 @@ object App{
         val loader =
           fileformat.standardLoader(compilerServices)
         val additionalComponents =
-          container.getComponents(classOf[ComponentSerialization[Array[String], NLogoFormat]]).asScala
+          container.getComponents(classOf[AddableLoader]).asScala
         if (additionalComponents.nonEmpty)
           additionalComponents.foldLeft(loader) {
-            case (l, serialization) =>
-              l.addSerializer[Array[String], NLogoFormat](serialization)
+            case (l, component) => component.addToLoader(l)
           }
-        else
-          loader
+        else loader
       }
     }
 

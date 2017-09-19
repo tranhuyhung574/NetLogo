@@ -12,10 +12,10 @@ import org.nlogo.app.App
 import org.nlogo.workspace.{ OpenModel, OpenModelFromURI, SaveModel },
   OpenModel.{ Controller => OpenModelController },
   SaveModel.{ Controller => SaveModelController }
-import org.nlogo.fileformat, fileformat.{ FailedConversionResult, NLogoFormat }
+import org.nlogo.fileformat, fileformat.{ FailedConversionResult, NLogoFormat, NLogoXFormat, ScalaXmlElementFactory }
 import org.nlogo.workspace.ModelsLibrary.modelsRoot
 import org.nlogo.headless.HeadlessWorkspace
-import org.nlogo.sdm.{ NLogoSDMFormat, SDMAutoConvertable }
+import org.nlogo.sdm.{ NLogoSDMFormat, NLogoXSDMFormat, SDMAutoConvertable }
 
 /**
  *
@@ -91,6 +91,7 @@ object ModelResaver {
       val modelLoader =
         fileformat.standardLoader(ws.compiler.utilities)
           .addSerializer[Array[String], NLogoFormat](new NLogoSDMFormat())
+          .addSerializer[NLogoXFormat.Section, NLogoXFormat](new NLogoXSDMFormat(ScalaXmlElementFactory))
       val controller = new ResaveController(modelPath.toUri)
       val dialect =
         if (modelPath.toString.toUpperCase.endsWith("3D")) NetLogoThreeDDialect

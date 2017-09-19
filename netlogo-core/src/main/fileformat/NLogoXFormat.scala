@@ -174,15 +174,16 @@ class NLogoXFormat(factory: ElementFactory) extends ModelFormat[NLogoXFormat.Sec
 
   val sectionNamesToKeys =
     Map(
-      "code"       -> "org.nlogo.modelsection.code",
-      "info"       -> "org.nlogo.modelsection.info",
-      "shapes"     -> "org.nlogo.modelsection.turtleshapes",
-      "linkShapes" -> "org.nlogo.modelsection.linkshapes",
-      "version"    -> "org.nlogo.modelsection.version",
-      "widgets"    -> "org.nlogo.modelsection.interface",
+      "code"            -> "org.nlogo.modelsection.code",
+      "info"            -> "org.nlogo.modelsection.info",
+      "shapes"          -> "org.nlogo.modelsection.turtleshapes",
+      "linkShapes"      -> "org.nlogo.modelsection.linkshapes",
+      "version"         -> "org.nlogo.modelsection.version",
+      "widgets"         -> "org.nlogo.modelsection.interface",
       "previewCommands" -> "org.nlogo.modelsection.previewcommands",
-      "experiments"     -> "org.nlogo.modelsection.behaviorspace"
-      )
+      "experiments"     -> "org.nlogo.modelsection.behaviorspace",
+      "systemDynamics"  -> "org.nlogo.modelsection.systemdynamics"
+    )
 
   def sections(location: URI): Try[Map[String,Section]] =
     Try {
