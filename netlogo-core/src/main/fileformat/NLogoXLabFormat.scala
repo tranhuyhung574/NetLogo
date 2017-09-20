@@ -15,30 +15,17 @@ import
 import
   scala.util.{ Failure, Success, Try }
 
-class NLogoXLabFormat(factory: ElementFactory)
+class NLogoXLabFormat(val factory: ElementFactory)
   extends ComponentSerialization[NLogoXFormat.Section, NLogoXFormat]
+  with NLogoXBaseReader
   with LabFormat {
-    def parseExperiments(elems: Seq[Element]): Try[Seq[LabProtocol]] = {
-      elems.foldLeft(Try(Seq.empty[LabProtocol])) {
-        case (Success(acc), e) =>
-          LabProtocolXml.read(e) match {
-            case Valid(w) => Success(acc :+ w)
-            case Invalid(err) => Failure(new NLogoXFormatException(err.message))
-          }
-        case (failure, e) => failure
-      }
-    }
-
     override def deserialize(s: NLogoXFormat.Section): Model => Try[Model] = { (m: Model) =>
-      parseExperiments(s.children.collect { case e: Element =>  e })
+      parseChildren(s, LabProtocolXml.read _)
         .map(protocols => m.withOptionalSection(componentName, Some(protocols), Seq.empty[LabProtocol]))
     }
 
   def serialize(m: Model): NLogoXFormat.Section =
-    factory.newElement("experiments")
-      .withElementList(
-        m.optionalSectionValue[Seq[LabProtocol]](componentName)
-          .getOrElse(Seq())
-          .map(p => LabProtocolXml.write(p, factory)))
-      .build
+    toSeqElement("experiments",
+      m.optionalSectionValue[Seq[LabProtocol]](componentName).getOrElse(Seq()),
+      (p: LabProtocol) => LabProtocolXml.write(p, factory))
 }

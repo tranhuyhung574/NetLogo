@@ -31,7 +31,6 @@ trait AbstractNLogoLabFormat[A <: ModelFormat[Array[String], A]]
       .getOrElse(Array[String]())
   }
 
-
   override def deserialize(s: Array[String]) = {(m: Model) =>
     Try { m.withOptionalSection(componentName, load(s, Some(m.version)), Seq[LabProtocol]()) }
   }

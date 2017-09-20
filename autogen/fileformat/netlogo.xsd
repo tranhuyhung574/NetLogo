@@ -36,6 +36,25 @@
     </xsd:choice>
   </xsd:complexType>
 
+  <xsd:complexType name="HubNetWidget">
+    <xsd:annotation>
+      <xsd:appinfo className="Widget" fileName="HubNetWidgetXml" />
+    </xsd:annotation>
+    <xsd:choice maxOccurs="unbounded">
+      <xsd:element name="button"  type="hubnetButton" />
+      <xsd:element name="chooser" type="chooser" />
+      <xsd:element name="numericInput" type="numericInput" />
+      <xsd:element name="stringInput" type="stringInput" />
+      <xsd:element name="monitor" type="hubnetMonitor" />
+      <xsd:element name="output"  type="output" />
+      <xsd:element name="plot"    type="plot" />
+      <xsd:element name="slider"  type="slider" />
+      <xsd:element name="switch"  type="switch" />
+      <xsd:element name="textbox" type="textbox" />
+      <xsd:element name="view"    type="hubnetView" />
+    </xsd:choice>
+  </xsd:complexType>
+
   <xsd:complexType name="dimensions">
     <xsd:annotation>
       <xsd:appinfo className="WorldDimensions" />
@@ -57,12 +76,22 @@
     <xsd:attribute name="maxPycor" type="xsd:integer" use="required" />
   </xsd:complexType>
 
+  <xsd:complexType name="hubnetDimensions">
+    <xsd:annotation>
+      <xsd:appinfo className="WorldDimensions" />
+    </xsd:annotation>
+    <xsd:attribute name="minPxcor" type="xsd:integer" use="required" />
+    <xsd:attribute name="maxPxcor" type="xsd:integer" use="required" />
+    <xsd:attribute name="minPycor" type="xsd:integer" use="required" />
+    <xsd:attribute name="maxPycor" type="xsd:integer" use="required" />
+  </xsd:complexType>
+
   <xsd:complexType name="view">
     <xsd:annotation>
       <xsd:appinfo className="View" additionalImports="UpdateMode" />
     </xsd:annotation>
     <xsd:all>
-      <xsd:element ref="dimensions" minOccurs="1" maxOccurs="1" />
+      <xsd:element name="dimensions" type="dimensions" minOccurs="1" maxOccurs="1" />
       <xsd:element name="tickCounterLabel" type="xsd:string" minOccurs="0" maxOccurs="1" />
     </xsd:all>
     <xsd:attributeGroup ref="Positioned" />
@@ -88,6 +117,16 @@
     </xsd:attribute>
     <xsd:attribute name="showTickCounter" type="xsd:boolean" use="required" />
     <xsd:attribute name="frameRate" type="xsd:double" use="required" />
+  </xsd:complexType>
+
+  <xsd:complexType name="hubnetView">
+    <xsd:annotation>
+      <xsd:appinfo className="View" />
+    </xsd:annotation>
+    <xsd:all>
+      <xsd:element name="dimensions" type="hubnetDimensions" minOccurs="1" maxOccurs="1" />
+    </xsd:all>
+    <xsd:attributeGroup ref="Positioned" />
   </xsd:complexType>
 
   <xsd:complexType name="slider">
@@ -292,6 +331,23 @@
     </xsd:attribute>
   </xsd:complexType>
 
+  <xsd:complexType name="hubnetButton">
+    <xsd:annotation>
+      <xsd:appinfo className="Button" constructorName="HubNetButton" additionalImports="HubNetButton AgentKind" />
+    </xsd:annotation>
+    <xsd:all>
+      <xsd:element name="display" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+    </xsd:all>
+    <xsd:attributeGroup ref="Positioned" />
+    <xsd:attribute name="actionKey">
+      <xsd:simpleType>
+        <xsd:restriction base="xsd:string">
+          <xsd:maxLength value="1"/>
+        </xsd:restriction>
+      </xsd:simpleType>
+    </xsd:attribute>
+  </xsd:complexType>
+
   <xsd:complexType name="chooser">
     <xsd:annotation>
       <xsd:appinfo className="Chooser" />
@@ -467,7 +523,19 @@
     </xsd:all>
     <xsd:attributeGroup ref="Positioned" />
     <xsd:attributeGroup ref="FontSized" />
-    <xsd:attribute name="precision" type="xsd:nonNegativeInteger" use="required" />
+    <xsd:attribute name="precision" type="xsd:integer" use="required" />
+  </xsd:complexType>
+
+  <xsd:complexType name="hubnetMonitor">
+    <xsd:annotation>
+      <xsd:appinfo className="Monitor" />
+    </xsd:annotation>
+    <xsd:all>
+      <xsd:element name="source" type="xsd:string" minOccurs="0" maxOccurs="1" />
+      <xsd:element name="display" type="xsd:string" minOccurs="0" maxOccurs="1" />
+    </xsd:all>
+    <xsd:attributeGroup ref="Positioned" />
+    <xsd:attribute name="precision" type="xsd:integer" use="required" />
   </xsd:complexType>
 
   <xsd:complexType name="textbox">
@@ -489,7 +557,7 @@
 
   <xsd:complexType name="turtleShape">
     <xsd:annotation>
-      <xsd:appinfo className="VectorShape" constructorName="TurtleShape" import="false" additionalImports="Shape.VectorShape" />
+      <xsd:appinfo className="VectorShape" constructorName="TurtleShape" import="false" fileName="VectorShapeXml" additionalImports="Shape.VectorShape" />
     </xsd:annotation>
     <xsd:all>
       <xsd:element name="elements" type="elements" />
@@ -599,7 +667,7 @@
 
   <xsd:complexType name="experiment">
     <xsd:annotation>
-      <xsd:appinfo className="LabProtocol" />
+      <xsd:appinfo className="LabProtocol" fileName="LabProtocolXml" />
     </xsd:annotation>
     <xsd:attribute name="name"                type="xsd:string" default="" />
     <xsd:attribute name="repetitions"         type="xsd:nonNegativeInteger" default="1" />

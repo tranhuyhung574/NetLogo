@@ -41,6 +41,7 @@ package object fileformat {
       .addSerializer[NLogoXFormat.Section, NLogoXFormat](new NLogoXLabFormat(ScalaXmlElementFactory))
       .addSerializer[NLogoXFormat.Section, NLogoXFormat](new NLogoXModelSettings(ScalaXmlElementFactory))
       .addSerializer[NLogoXFormat.Section, NLogoXFormat](new NLogoXPreviewCommandsFormat(ScalaXmlElementFactory))
+      .addSerializer[NLogoXFormat.Section, NLogoXFormat](new NLogoXHubNetFormat(ScalaXmlElementFactory))
       .addFormat[Array[String], NLogoFormat](new NLogoFormat)
       .addSerializer[Array[String], NLogoFormat](NLogoModelSettings)
 
@@ -50,6 +51,7 @@ package object fileformat {
       .addSerializer[NLogoXFormat.Section, NLogoXFormat](new NLogoXLabFormat(ScalaXmlElementFactory))
       .addSerializer[NLogoXFormat.Section, NLogoXFormat](new NLogoXModelSettings(ScalaXmlElementFactory))
       .addSerializer[NLogoXFormat.Section, NLogoXFormat](new NLogoXPreviewCommandsFormat(ScalaXmlElementFactory))
+      .addSerializer[NLogoXFormat.Section, NLogoXFormat](new NLogoXHubNetFormat(ScalaXmlElementFactory))
       .addFormat[Array[String], NLogoFormat](new NLogoFormat)
       .addSerializer[Array[String], NLogoFormat](NLogoModelSettings)
       .addSerializer[Array[String], NLogoFormat](new NLogoHubNetFormat(literalParser))

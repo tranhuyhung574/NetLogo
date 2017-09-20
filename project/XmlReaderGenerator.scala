@@ -46,6 +46,14 @@ object XmlReaderGenerator {
          autogenRoot.value / "fileformat" / "netlogo.xsd",
          (sourceManaged in Compile).value,
          "org.nlogo.core.model",
+         "HubNetWidget",
+         "import org.nlogo.core.{ LogoList, Widget }",
+         "org.nlogo.core",
+         identity),
+       generator(streams.value.log.info(_),
+         autogenRoot.value / "fileformat" / "netlogo.xsd",
+         (sourceManaged in Compile).value,
+         "org.nlogo.core.model",
          "linkShape",
          "",
          "org.nlogo.core",
@@ -119,6 +127,8 @@ object XmlReaderGenerator {
 
       val baseType = allComplexTypes(definingType).klassName
 
+      val fileName = allComplexTypes(definingType).fileName.getOrElse(definingType.capitalize + "Xml")
+
       val topTypes = namedTopTypes.map(_._2)
 
       def elemsRequiringReaders(acc: Set[String], toVisit: Seq[String]): Set[String] = {
@@ -141,7 +151,7 @@ object XmlReaderGenerator {
           .map(ct => ct.copy(isTopType = topTypes.contains(ct.name)))
           .toSeq
 
-      val file = ppackage.split('.').foldLeft(dir)(_ / _) / s"${baseType}Xml.scala"
+      val file = ppackage.split('.').foldLeft(dir)(_ / _) / s"${fileName}.scala"
       log("creating: " + file)
 
       val codeString = new StringBuilder()
@@ -180,7 +190,7 @@ object XmlReaderGenerator {
       append("import cats.data.Validated, Validated.{ Valid, Invalid }")
 
       append("")
-      append(s"object ${baseType}Xml {")
+      append(s"object ${fileName} {")
       append(s"  trait Reader { def read(xml: Element): Validated[ParseError, ${baseType}] }")
       append(s"  trait Writer[W <: ${baseType}] { def write(${baseType.toLowerCase}: W, factory: ElementFactory): Element }")
 
@@ -224,7 +234,7 @@ object XmlReaderGenerator {
     }
 
     // complexType represents a fully-formed complexType declaration
-    case class ComplexType(name: String, isTopType: Boolean, content: ComplexTypeContent) {
+    case class ComplexType(name: String, isTopType: Boolean, content: ComplexTypeContent, fileName: Option[String] = None) {
       def importNames = content.importNames
       def klassName = content.klassName
       def constructorName = content.constructorName
@@ -492,6 +502,10 @@ object XmlReaderGenerator {
 
       def scalaSafe: String =
         s.replaceAllLiterally("final", "_final").replaceAllLiterally("-", "")
+
+      def decapitalize: String =
+        if (s.isEmpty) s
+        else Character.toLowerCase(s.head) + s.tail
     }
 
     trait DeclGenerator {
@@ -963,8 +977,8 @@ object XmlReaderGenerator {
           if (cts.length == 1) {
             val ct = cts.head
             // TODO: Special-casing PreviewCommands.Manual is a terrible hack
-            val varName = if (klassName == "PreviewCommands.Manual") "" else ct.name
-            val writtenName = if (klassName == "PreviewCommands.Manual") "PreviewCommands.Manual" else ct.name
+            val varName = if (klassName == "PreviewCommands.Manual") "" else ct.name.decapitalize
+            val writtenName = if (klassName == "PreviewCommands.Manual") "PreviewCommands.Manual" else varName
             Seq((varName, ct.klassName, s"new ${ct.name.capitalize}Writer(${name(ct.name).quoted}).write(${writtenName}, factory)"))
           } else {
             val allResolvedElements: Seq[(ComplexType, Seq[SpecifiedElement])] =
@@ -1122,7 +1136,8 @@ object XmlReaderGenerator {
 
   def parseComplexType(ctElement: Node, sharedSpecs: Map[String, AttributeGroup], isTopType: Boolean): ComplexType = {
     val name = ctElement.attributes("name").text
-    ComplexType(name, isTopType, parseComplexTypeContent(ctElement, sharedSpecs))
+    val fileName = ctElement.appInfo("fileName")
+    ComplexType(name, isTopType, parseComplexTypeContent(ctElement, sharedSpecs), fileName)
   }
 
   def parseComplexTypeContent(ctElement: Node, sharedSpecs: Map[String, AttributeGroup]): ComplexTypeContent = {

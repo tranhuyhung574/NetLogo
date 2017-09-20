@@ -190,45 +190,6 @@ object HubNetWidgetReader {
     }
   }
 
-  object HubNetSwitchReader extends HubNetWidgetBaseReader {
-    type T = Switch
-    def classTag: ClassTag[T] = ClassTag(classOf[Switch])
-
-    def definition = List(
-      SpecifiedLine("SWITCH"),
-      IntLine(),
-      IntLine(),
-      IntLine(),
-      IntLine(),
-      OptionalStringLine("NIL", false),
-      OptionalStringLine("NIL", false),
-      InvertedBooleanLine(),
-      ReservedLine("1"),
-      ReservedLine("-1000"))
-
-    def asList(switch: Switch): List[Any] =
-      List(
-        (),
-        switch.left,
-        switch.top,
-        switch.right,
-        switch.bottom,
-        switch.display.toOptionalString,
-        switch.variable.toOptionalString,
-        switch.on,
-        (),
-        ())
-
-    def asWidget(vals: List[Any], parser: LiteralParser): Switch = {
-      val List(_, left: Int, top: Int, right: Int, bottom: Int, name: OptionalString,
-        _, isOn: Boolean, _, _) = vals
-
-      Switch(variable = name.toOption,
-        left = left, top = top, right = right, bottom = bottom,
-        display = name.toOption, on = isOn)
-    }
-  }
-
   object HubNetViewReader extends HubNetWidgetBaseReader {
     type T = View
     def classTag: ClassTag[T] = ClassTag(classOf[View])

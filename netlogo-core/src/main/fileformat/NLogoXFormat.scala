@@ -182,7 +182,8 @@ class NLogoXFormat(factory: ElementFactory) extends ModelFormat[NLogoXFormat.Sec
       "widgets"         -> "org.nlogo.modelsection.interface",
       "previewCommands" -> "org.nlogo.modelsection.previewcommands",
       "experiments"     -> "org.nlogo.modelsection.behaviorspace",
-      "systemDynamics"  -> "org.nlogo.modelsection.systemdynamics"
+      "systemDynamics"  -> "org.nlogo.modelsection.systemdynamics",
+      "hubnet"          -> "org.nlogo.modelsection.hubnetclient"
     )
 
   def sections(location: URI): Try[Map[String,Section]] =
