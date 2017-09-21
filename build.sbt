@@ -208,6 +208,7 @@ lazy val headless = (project in file ("netlogo-headless")).
     nogen                        := { System.setProperty("org.nlogo.noGenerator", "true") },
     libraryDependencies          ++= Seq(
       "org.ow2.asm" % "asm-all" % "5.0.4",
+      "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
       "org.parboiled" %% "parboiled" % "2.1.3",
       "commons-codec" % "commons-codec" % "1.10"
     ),
