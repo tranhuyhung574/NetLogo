@@ -14,7 +14,7 @@ import org.nlogo.app.common.{ CodeToHtml, Events => AppEvents, FileActions, Find
 import org.nlogo.app.interfacetab.{ InterfaceToolBar, WidgetPanel }
 import org.nlogo.app.tools.{ AgentMonitorManager, GraphicsPreview, Preferences, PreferencesDialog, PreviewCommandsEditor }
 import org.nlogo.awt.UserCancelException
-import org.nlogo.core.{ AgentKind, CompilerException, Dialect, I18N, Model,
+import org.nlogo.core.{ AgentKind, CompilerException, Dialect, Femto, I18N, Model,
   Shape, Widget => CoreWidget }, Shape.{ LinkShape, VectorShape }
 import org.nlogo.core.model.WidgetReader
 import org.nlogo.fileformat, fileformat.{ ModelConversion, ModelConverter, ScalaXmlElementFactory }
@@ -99,11 +99,10 @@ object App{
       def verify(x$1: org.picocontainer.PicoContainer): Unit = {}
 
       def getComponentInstance(container: org.picocontainer.PicoContainer, into: java.lang.reflect.Type) = {
-        val compiler         = container.getComponent(classOf[PresentationCompilerInterface])
-        val compilerServices = new DefaultCompilerServices(compiler)
+        val literalParser = Femto.scalaSingleton[org.nlogo.core.LiteralParser]("org.nlogo.parse.CompilerUtilities")
 
         val loader =
-          fileformat.standardLoader(compilerServices)
+          fileformat.standardLoader(literalParser)
         val additionalComponents =
           container.getComponents(classOf[AddableLoader]).asScala
         if (additionalComponents.nonEmpty)
