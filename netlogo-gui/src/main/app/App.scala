@@ -19,7 +19,7 @@ import org.nlogo.core.{ AgentKind, CompilerException, Dialect, Femto, I18N, Mode
 import org.nlogo.core.model.WidgetReader
 import org.nlogo.fileformat, fileformat.{ ModelConversion, ModelConverter, ScalaXmlElementFactory }
 import org.nlogo.log.Logger
-import org.nlogo.nvm.{ DefaultCompilerServices, PresentationCompilerInterface, Workspace }
+import org.nlogo.nvm.{ PresentationCompilerInterface, Workspace }
 import org.nlogo.shape.{ LinkShapesManagerInterface, ShapesManagerInterface, TurtleShapesManagerInterface }
 import org.nlogo.util.{ NullAppHandler, Pico }
 import org.nlogo.window._

@@ -137,7 +137,7 @@ public abstract strictfp class GUIWorkspace // can't be both abstract and strict
       try {
         while (true) {
           if (jobManager.anyPrimaryJobs()) {
-            world().comeUpForAir = true;
+            jobManager.pokePrimaryJobs();
           }
           // 100 times a second seems like plenty
           Thread.sleep(10);
@@ -651,15 +651,18 @@ public abstract strictfp class GUIWorkspace // can't be both abstract and strict
 
   // this is called on the job thread when the engine comes up for air - ST 1/10/07
   @Override
-  public void breathe() {
+  public void breathe(org.nlogo.nvm.Context context) {
     jobManager.maybeRunSecondaryJobs();
     if (updateMode().equals(UpdateModeJ.CONTINUOUS())) {
       updateManager().pseudoTick();
       updateDisplay(true);
     }
-    world().comeUpForAir = updateManager().shouldComeUpForAirAgain();
+    context.job.comeUpForAir.set(updateManager().shouldComeUpForAirAgain());
     notifyListeners();
   }
+
+  // see breathe(org.nlogo.nvm.Context)
+  public void breathe() { }
 
   // called only from job thread, by such primitives as
   // _exportinterface and _usermessage, which need to make sure the
