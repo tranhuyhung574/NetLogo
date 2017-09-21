@@ -2,11 +2,10 @@
 
 package org.nlogo.window
 
-import org.nlogo.agent.{ Agent, AgentIterator, AgentSet, Patch, Turtle }
+import org.nlogo.agent.{ Agent, Patch, Turtle }
 import org.nlogo.core.{ AgentKind, I18N, Shape }
 import org.nlogo.api.{ AgentException, AgentFollowingPerspective, Exceptions, Perspective,
-  PerspectiveJ, RendererInterface, ViewSettings }
-import org.nlogo.shape.VectorShape
+  RendererInterface, ViewSettings }
 import org.nlogo.awt.{ Colors, Hierarchy, ImageSelection }
 import org.nlogo.window.Events.{ DirtyEvent, LoadBeginEvent, LoadEndEvent, CompiledEvent, IconifiedEvent }
 
@@ -25,7 +24,7 @@ object View {
 import View.AgentMenuType._
 
 @scala.annotation.strictfp
-class View(val workspace: GUIWorkspace) extends JComponent
+class View(val workspace: GUIWorkspaceScala) extends JComponent
     with LoadBeginEvent.Handler
     with LoadEndEvent.Handler
     with CompiledEvent.Handler
@@ -134,7 +133,7 @@ class View(val workspace: GUIWorkspace) extends JComponent
       if (offscreenImage == null) {
         offscreenImage = createImage(getWidth, getHeight)
         if (offscreenImage != null) {
-          gOff =  offscreenImage.getGraphics.asInstanceOf[Graphics2D]
+          gOff = offscreenImage.getGraphics.asInstanceOf[Graphics2D]
           gOff.setFont(getFont)
         }
       }
@@ -186,7 +185,7 @@ class View(val workspace: GUIWorkspace) extends JComponent
 
   override def paintComponent(g: Graphics): Unit = {
     frameCount += 1
-    if (frozen || !workspace.world.displayOn) {
+    if (frozen || workspace.displayStatus.renderAsGray) {
       if (_dirty) {
         g.setColor(InterfaceColors.GRAPHICS_BACKGROUND)
         g.fillRect(0, 0, getWidth, getHeight)
@@ -248,7 +247,7 @@ class View(val workspace: GUIWorkspace) extends JComponent
   def freeze(): Unit = {
     if (!frozen) {
       frozen = true
-      if (workspace.world.displayOn) {
+      if (workspace.displayStatus.shouldRender(false)) {
         beClean()
       }
     }

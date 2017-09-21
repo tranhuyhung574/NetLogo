@@ -2,7 +2,6 @@
 
 package org.nlogo.app
 
-
 import javax.swing.{ JOptionPane, JMenu }
 import java.awt.event.ActionEvent
 

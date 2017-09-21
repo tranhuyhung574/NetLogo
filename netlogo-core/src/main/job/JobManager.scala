@@ -117,9 +117,18 @@ class JobManager(jobManagerOwner: JobManagerOwner, lock: Object) extends org.nlo
   def haltNonObserverJobs() {
     val goners = thread.primaryJobs.synchronized {
       thread.primaryJobs.asScala.filter {j => j != null && j.agentset.kind != AgentKind.Observer}
-    }.asJava
-    finishJobs(goners, null)
-    waitForFinishedJobs(goners)
+    }
+    finishJobs(goners.asJava, null)
+    waitForSomeJobs(goners.toSet, thread.primaryJobs)
+  }
+
+  def haltJobsBesides(owner: JobOwner): Unit = {
+    haltSecondary()
+    val goners = thread.primaryJobs.synchronized {
+      thread.primaryJobs.asScala.filter { j => j.owner ne owner }
+    }
+    finishJobs(goners.asJava, null)
+    waitForSomeJobs(goners.toSet, thread.primaryJobs)
   }
 
   def finishJobs(owner: JobOwner) {finishJobs(thread.primaryJobs, owner)}
@@ -179,6 +188,18 @@ class JobManager(jobManagerOwner: JobManagerOwner, lock: Object) extends org.nlo
         job <- jobs.asScala
         if (job != null && (owner == null || job.owner == owner))
       } job.finish()
+    }
+  }
+
+  private def waitForSomeJobs(jobsAwaited: Set[Job], jobs: List[Job]): Unit = {
+    var jobsStillWaiting = jobsAwaited
+
+    while (jobsStillWaiting.nonEmpty) {
+      val jobToWaitFor = jobsStillWaiting.head
+      val jobRunning = jobs.contains(jobToWaitFor)
+      if (jobRunning)
+        waitFor(jobToWaitFor, true)
+      jobsStillWaiting -= jobToWaitFor
     }
   }
 

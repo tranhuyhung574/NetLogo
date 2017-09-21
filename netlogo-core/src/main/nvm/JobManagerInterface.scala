@@ -26,6 +26,7 @@ trait JobManagerInterface {
   def joinForeverButtons(agent: Agent)
   def haltPrimary()
   def haltNonObserverJobs()
+  def haltJobsBesides(owner: JobOwner)
   def finishJobs(owner: JobOwner)
   def finishSecondaryJobs(owner: JobOwner)
   def haltSecondary()

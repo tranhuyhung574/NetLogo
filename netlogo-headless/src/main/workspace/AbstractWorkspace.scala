@@ -509,7 +509,7 @@ object AbstractWorkspaceTraits {
       Femto.get("org.nlogo.job.JobManager", this, world)
     def halt() {
       jobManager.haltPrimary()
-      world.displayOn(true)
+      enablePeriodicRendering()
     }
     /// methods that may be called from the job thread by prims
     def joinForeverButtons(agent: Agent) {
