@@ -149,8 +149,9 @@ object ModelResaver {
     for (path <- paths) {
       wait {
         try {
+          val controller = new ResaveController(path.toUri)
           App.app.open(path.toString)
-          App.app.saveOpenModel()
+          App.app.saveOpenModel(controller)
         }
         catch {
           case e: Exception => failedModels :+= ((path, e.getMessage))

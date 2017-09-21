@@ -24,7 +24,8 @@ import org.nlogo.shape.{ LinkShapesManagerInterface, ShapesManagerInterface, Tur
 import org.nlogo.util.{ NullAppHandler, Pico }
 import org.nlogo.window._
 import org.nlogo.window.Events._
-import org.nlogo.workspace.{ AbstractWorkspace, AbstractWorkspaceScala, Controllable, CurrentModelOpener, HubNetManagerFactory, WorkspaceFactory }
+import org.nlogo.workspace.{ AbstractWorkspace, AbstractWorkspaceScala,
+  Controllable, CurrentModelOpener, HubNetManagerFactory, SaveModel, SaveModelAs, WorkspaceFactory }
 
 import org.picocontainer.adapters.AbstractAdapter
 import org.picocontainer.parameters.{ ComponentParameter, ConstantParameter }
@@ -894,8 +895,12 @@ class App extends
    * Should only be used by ModelResaver.
    */
   @throws(classOf[java.io.IOException])
-  private[nlogo] def saveOpenModel(): Unit = {
-    dispatchThreadOrBust(fileManager.saveModel(false))
+  private[nlogo] def saveOpenModel(controller: SaveModel.Controller): Unit = {
+    SaveModelAs(pico.getComponent(classOf[ModelSaver]).currentModel,
+      pico.getComponent(classOf[ModelLoader]),
+      controller,
+      pico.getComponent(classOf[AbstractWorkspaceScala]),
+      Version).foreach(thunk => thunk())
   }
 
   /**
