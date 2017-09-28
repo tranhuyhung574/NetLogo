@@ -170,8 +170,8 @@ public abstract strictfp class GUIWorkspace // can't be both abstract and strict
   public abstract RendererInterface newRenderer();
 
   public void stamp(org.nlogo.api.Agent agent, boolean erase) {
-    view.renderer.prepareToPaint(view, view.renderer.trailDrawer().getWidth(), view.renderer.trailDrawer().getHeight());
-    view.renderer.trailDrawer().stamp(agent, erase);
+    view.renderer().prepareToPaint(view, view.renderer().trailDrawer().getWidth(), view.renderer().trailDrawer().getHeight());
+    view.renderer().trailDrawer().stamp(agent, erase);
     if (hubNetManager().isDefined()) {
       hubNetManager().get().sendStamp(agent, erase);
     }
@@ -192,18 +192,18 @@ public abstract strictfp class GUIWorkspace // can't be both abstract and strict
   @Override
   public void importDrawing(java.io.InputStream is)
       throws java.io.IOException {
-    view.renderer.trailDrawer().importDrawing(is);
+    view.renderer().trailDrawer().importDrawing(is);
   }
 
   @Override
   public void importDrawing(org.nlogo.core.File file)
       throws java.io.IOException {
-    view.renderer.trailDrawer().importDrawing(file);
+    view.renderer().trailDrawer().importDrawing(file);
   }
 
   public void exportDrawing(String filename, String format)
-      throws java.io.IOException {
-      FileIO$.MODULE$.writeImageFile(view.renderer.trailDrawer().getAndCreateDrawing(true), filename, format);
+    throws java.io.IOException {
+    FileIO$.MODULE$.writeImageFile(view.renderer().trailDrawer().getAndCreateDrawing(true), filename, format);
   }
 
   public java.awt.image.BufferedImage getAndCreateDrawing() {
@@ -211,13 +211,13 @@ public abstract strictfp class GUIWorkspace // can't be both abstract and strict
   }
 
   public java.awt.image.BufferedImage getAndCreateDrawing(boolean dirty) {
-    return view.renderer.trailDrawer().getAndCreateDrawing(dirty);
+    return view.renderer().trailDrawer().getAndCreateDrawing(dirty);
   }
 
   @Override
   public void clearDrawing() {
     world().clearDrawing();
-    view.renderer.trailDrawer().clearDrawing();
+    view.renderer().trailDrawer().clearDrawing();
     if (hubNetManager().isDefined()) {
       hubNetManager().get().sendClear();
     }
@@ -242,11 +242,11 @@ public abstract strictfp class GUIWorkspace // can't be both abstract and strict
   }
 
   public boolean sendPixels() {
-    return view.renderer.trailDrawer().sendPixels();
+    return view.renderer().trailDrawer().sendPixels();
   }
 
   public void sendPixels(boolean dirty) {
-    view.renderer.trailDrawer().sendPixels(dirty);
+    view.renderer().trailDrawer().sendPixels(dirty);
   }
 
   @Override
@@ -378,7 +378,7 @@ public abstract strictfp class GUIWorkspace // can't be both abstract and strict
 
   public void changeTopology(boolean wrapX, boolean wrapY) {
     world().changeTopology(wrapX, wrapY);
-    viewWidget.view().renderer.changeTopology(wrapX, wrapY);
+    viewWidget.view().renderer().changeTopology(wrapX, wrapY);
   }
 
   /// very kludgy stuff for communicating with stuff in app
@@ -413,7 +413,7 @@ public abstract strictfp class GUIWorkspace // can't be both abstract and strict
 
   @Override
   public RendererInterface renderer() {
-    return view.renderer;
+    return view.renderer();
   }
 
   // called from the job thread
@@ -501,7 +501,7 @@ public abstract strictfp class GUIWorkspace // can't be both abstract and strict
       glView.displaySwitch(viewWidget.displaySwitch().isSelected());
       viewWidget.setVisible(dualView);
     }
-    view.renderPerspective = enabled;
+    view.renderPerspective_$eq(enabled);
     viewWidget.settings().refreshViewProperties(!enabled);
     new org.nlogo.window.Events.Enable2DEvent(enabled).raise(this);
   }
@@ -765,48 +765,48 @@ public abstract strictfp class GUIWorkspace // can't be both abstract and strict
 
   // DrawingInterface for 3D renderer
   public int[] colors() {
-    return view.renderer.trailDrawer().colors();
+    return view.renderer().trailDrawer().colors();
   }
 
   public boolean isDirty() {
-    return view.renderer.trailDrawer().isDirty();
+    return view.renderer().trailDrawer().isDirty();
   }
 
   public boolean isBlank() {
-    return view.renderer.trailDrawer().isBlank();
+    return view.renderer().trailDrawer().isBlank();
   }
 
   public void markClean() {
-    view.renderer.trailDrawer().markClean();
+    view.renderer().trailDrawer().markClean();
   }
 
   public void markDirty() {
-    view.renderer.trailDrawer().markDirty();
+    view.renderer().trailDrawer().markDirty();
   }
 
   public int getWidth() {
-    return view.renderer.trailDrawer().getWidth();
+    return view.renderer().trailDrawer().getWidth();
   }
 
   public int getHeight() {
-    return view.renderer.trailDrawer().getHeight();
+    return view.renderer().trailDrawer().getHeight();
   }
 
   public void readImage(java.io.InputStream is) throws java.io.IOException {
-    view.renderer.trailDrawer().readImage(is);
+    view.renderer().trailDrawer().readImage(is);
   }
 
   public void readImage(java.awt.image.BufferedImage image) throws java.io.IOException {
-    view.renderer.trailDrawer().readImage(image);
+    view.renderer().trailDrawer().readImage(image);
   }
 
   public void rescaleDrawing() {
-    view.renderer.trailDrawer().rescaleDrawing();
+    view.renderer().trailDrawer().rescaleDrawing();
   }
 
   public void drawLine(double x0, double y0, double x1, double y1,
                        Object color, double size, String mode) {
-    view.renderer.trailDrawer().drawLine
+    view.renderer().trailDrawer().drawLine
         (x0, y0, x1, y1, color, size, mode);
     if (hubNetManager().isDefined()) {
       hubNetManager().get().sendLine(x0, y0, x1, y1, color, size, mode);
@@ -814,11 +814,11 @@ public abstract strictfp class GUIWorkspace // can't be both abstract and strict
   }
 
   public void setColors(int[] colors) {
-    view.renderer.trailDrawer().setColors(colors);
+    view.renderer().trailDrawer().setColors(colors);
   }
 
   public Object getDrawing() {
-    return view.renderer.trailDrawer().getDrawing();
+    return view.renderer().trailDrawer().getDrawing();
   }
 
   // called on job thread, but without world lock - ST 9/12/07

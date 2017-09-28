@@ -6,7 +6,7 @@ import org.nlogo.core.Shape
 
 trait ViewInterface {
   def viewIsVisible: Boolean
-  def framesSkipped()
+  def framesSkipped(): Unit
   def isDead: Boolean
   def paintImmediately(force: Boolean)
   def incrementalUpdateFromEventThread()
