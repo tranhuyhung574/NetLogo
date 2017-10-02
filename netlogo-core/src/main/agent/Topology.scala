@@ -3,6 +3,7 @@
 package org.nlogo.agent
 
 import org.nlogo.api, api.AgentException
+import java.util.ArrayList
 
 @annotation.strictfp
 object Topology {
@@ -39,6 +40,40 @@ object Topology {
     else
       pos
 
+  // assume no wrapping for now.
+  def getRegion(x: Int, y: Int, r: Int, w: Int, h: Int, xWraps: Boolean, yWraps: Boolean): ArrayList[(Int, Int)] = {
+    val ans: ArrayList[(Int, Int)] = new ArrayList()
+    var (start, end, xx, yy) = (-1, -1, -1, -1)
+
+    for (i <- 0 until h * w) {
+      xx = i % w
+      yy = (i - 1) / h
+
+
+      if (!(xx == x && yy == y) && xx < w && yy < h &&
+        (Math.abs(x - xx) <= r || (xWraps && ((xx <= (x + r) % w) || (xx >= w - x + r)))) &&
+        (Math.abs(y - yy) <= r || (yWraps && ((yy <= (y + r) % h) || (yy >= h - y + r))))) {
+        if (start == -1) {
+          start = i
+          end = i + 1
+        } else {
+          end += 1
+        }
+
+      } else if (start != -1) {
+        ans.add((start, end))
+
+        start = -1
+        end = -1
+      }
+    }
+
+    if (start != -1) {
+      ans.add((start, end))
+    }
+
+    ans
+  }
 }
 
 abstract class Topology(val world: World, val xWraps: Boolean, val yWraps: Boolean)
