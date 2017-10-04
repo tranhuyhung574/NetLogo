@@ -47,12 +47,11 @@ object Topology {
 
     for (i <- 0 until h * w) {
       xx = i % w
-      yy = (i - 1) / h
+      yy = i / w
 
-
-      if (!(xx == x && yy == y) && xx < w && yy < h &&
-        (Math.abs(x - xx) <= r || (xWraps && ((xx <= (x + r) % w) || (xx >= w - x + r)))) &&
-        (Math.abs(y - yy) <= r || (yWraps && ((yy <= (y + r) % h) || (yy >= h - y + r))))) {
+      if (!(xx == x && yy == y) &&
+        (Math.abs(x - xx) <= r || (xWraps && ((xx <= (x + r) % w) || (xx >= w - r + x)))) &&
+        (Math.abs(y - yy) <= r || (yWraps && ((yy <= (y + r) % h) || (yy >= h - r + y))))) {
         if (start == -1) {
           start = i
           end = i + 1
