@@ -10,7 +10,7 @@ import
     model.ElementFactory
 
 import
-  org.nlogo.api.{ ComponentSerialization, ModelSettings, ModelFormat }
+  org.nlogo.api.{ ComponentSerialization, ModelSettings }
 
 import
   scala.util.{ Failure, Success }

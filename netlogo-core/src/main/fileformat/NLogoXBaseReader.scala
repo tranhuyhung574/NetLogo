@@ -3,13 +3,13 @@
 package org.nlogo.fileformat
 
 import
-  org.nlogo.core.model.{ Element, ElementFactory, Node, ParseError }
+  org.nlogo.core.model.{ Element, ElementFactory, ParseError }
 
 import
   cats.data.Validated
 
 import
-  cats.{ Applicative, Traverse }
+  cats.Traverse
 
 import
   scala.util.{ Failure, Success, Try }

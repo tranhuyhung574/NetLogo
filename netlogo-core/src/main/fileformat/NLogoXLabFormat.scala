@@ -3,17 +3,13 @@
 package org.nlogo.fileformat
 
 import
-  cats.data.Validated.{ Invalid, Valid }
-
-import
-  org.nlogo.core.{ LiteralParser, Model, model },
-    model.{ Element, ElementFactory }
+  org.nlogo.core.{ Model, model }, model.ElementFactory
 
 import
   org.nlogo.api.{ ComponentSerialization, LabProtocol }
 
 import
-  scala.util.{ Failure, Success, Try }
+  scala.util.Try
 
 class NLogoXLabFormat(val factory: ElementFactory)
   extends ComponentSerialization[NLogoXFormat.Section, NLogoXFormat]

@@ -30,7 +30,7 @@ import
   scala.util.{ Failure, Success, Try }
 
 import
-  scala.xml.{ Elem, NamespaceBinding, PrettyPrinter, TopScope, XML }
+  scala.xml.{ Elem, NamespaceBinding, TopScope, XML }
 
 object NLogoXFormat {
   type Section = Element
@@ -257,8 +257,6 @@ class NLogoXFormat(factory: ElementFactory) extends ModelFormat[NLogoXFormat.Sec
     }
     */
   }
-
-  private def buildRootElem(sections: Map[String,Section]): Try[Element] = ???
 
   def sectionsToSource(sections: Map[String,Section]): Try[String] = ???
 
