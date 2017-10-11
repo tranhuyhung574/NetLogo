@@ -4,8 +4,12 @@ package org.nlogo.agent;
 
 import org.nlogo.api.AgentException;
 import org.nlogo.core.AgentKindJ;
+import scala.Array;
+import scala.Tuple2;
+import shapeless.Tuple;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.HashSet;
 
@@ -94,41 +98,59 @@ public strictfp class InRadiusOrCone
       cachedIDs = new HashSet<Long>(0);
     }
 
-    for (int dy = dymin; dy <= dymax; dy++) {
-      for (int dx = dxmin; dx <= dxmax; dx++) {
-        try {
-          Patch patch = startPatch.getPatchAtOffsets(dx, dy);
+    System.out.println(radius);
+    ArrayList<Tuple2<Object, Object>> regions = world.topology().getRegion((int) StrictMath.floor(startX), (int) StrictMath.floor(startY), (int) StrictMath.ceil(radius) + 1);
+    Patch patches[] = new Patch[world.patches().count()];
+    Agent worldPatches[] = ((ArrayAgentSet) world.patches()).array();
+    int curr = 0;
+    int length;
+    for (Tuple2<Object, Object> region : regions) {
+      int r1 = (int)region._1();
+      int r2 = (int)region._2();
+      length = r2 - r1;
+      System.arraycopy(worldPatches, r1, patches, curr, length);
+      curr += length;
+    }
 
-          if (sourceSet.kind() == AgentKindJ.Patch()) {
-            if (world.protractor().distance(patch.pxcor, patch.pycor, startX, startY, wrap) <= radius &&
-                (sourceSet == world.patches() || cachedIDs.contains(new Long(patch.id())))) {
-              result.add(patch);
-            }
-          } else if (sourceSet.kind() == AgentKindJ.Turtle()) {
-            // Only check patches that might have turtles within the radius on them.
-            // The 1.415 (square root of 2) adjustment is necessary because it is
-            // possible for portions of a patch to be within the circle even though
-            // the center of the patch is outside the circle.  Both turtles, the
-            // turtle in the center and the turtle in the agentset, can be as much
-            // as half the square root of 2 away from its patch center.  If they're
-            // away from the patch centers in opposite directions, that makes a total
-            // of square root of 2 additional distance we need to take into account.
-            if (world.rootsTable().gridRoot(dx * dx + dy * dy) > radius + 1.415) {
-              continue;
-            }
-            for (Turtle turtle : patch.turtlesHere()) {
-              if (world.protractor().distance(turtle.xcor(), turtle.ycor(), startX, startY, wrap) <= radius
-                      && (sourceSet == world.turtles()
-                          || (sourceSet.isBreedSet() && sourceSet == turtle.getBreed())
-                          || cachedIDs.contains(new Long(turtle.id())))) {
-                result.add(turtle);
-              }
+    System.out.println(curr);
+
+    for (int i = 0; i < curr; i++) {
+//      for (int dx = dxmin; dx <= dxmax; dx++) {
+
+//        try {
+        Patch patch = patches[i];
+
+        if (sourceSet.kind() == AgentKindJ.Patch()) {
+          if (world.protractor().distance(patch.pxcor, patch.pycor, startX, startY, wrap) <= radius &&
+              (sourceSet == world.patches() || cachedIDs.contains(new Long(patch.id())))) {
+            result.add(patch);
+          }
+        } else if (sourceSet.kind() == AgentKindJ.Turtle()) {
+          // Only check patches that might have turtles within the radius on them.
+          // The 1.415 (square root of 2) adjustment is necessary because it is
+          // possible for portions of a patch to be within the circle even though
+          // the center of the patch is outside the circle.  Both turtles, the
+          // turtle in the center and the turtle in the agentset, can be as much
+          // as half the square root of 2 away from its patch center.  If they're
+          // away from the patch centers in opposite directions, that makes a total
+          // of square root of 2 additional distance we need to take into account.
+          // TODO fix this:
+//            if (world.rootsTable().gridRoot(dx * dx + dy * dy) > radius + 1.415) {
+//              continue;
+//            }
+          for (Turtle turtle : patch.turtlesHere()) {
+            if (world.protractor().distance(turtle.xcor(), turtle.ycor(), startX, startY, wrap) <= radius
+                    && (sourceSet == world.turtles()
+                        || (sourceSet.isBreedSet() && sourceSet == turtle.getBreed())
+                        || cachedIDs.contains(new Long(turtle.id())))) {
+              result.add(turtle);
             }
           }
-        } catch (AgentException e) {
-          org.nlogo.api.Exceptions.ignore(e);
         }
-      }
+//        } catch (AgentException e) {
+//          org.nlogo.api.Exceptions.ignore(e);
+//        }
+//      }
     }
     return result;
   }

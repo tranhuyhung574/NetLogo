@@ -5,7 +5,6 @@ package org.nlogo.agent
 import java.util.ArrayList
 
 import org.scalatest.FunSuite
-import Topology.getRegion
 
 class GetRegionTests extends FunSuite {
 
@@ -15,62 +14,81 @@ class GetRegionTests extends FunSuite {
     res
   }
 
+  def testGetRegion(x: Int, y: Int, r: Int, w: Int, h: Int, xWraps: Boolean, yWraps: Boolean) = {
+    val world = new World2D
+    val ww: Int =
+      if (w % 2 == 0) {
+        w / 2 - 1
+      } else {
+        w / 2
+      }
+    val hh: Int =
+      if (h % 2 == 0) {
+        h / 2 - 1
+      } else {
+        h / 2
+      }
+    world.createPatches(- w / 2, ww, - h / 2, hh)
+    assert(world.worldWidth == w)
+    world.changeTopology(xWraps, yWraps)
+    world.topology.getRegion(x, y, r)
+  }
+
   // ticket #1038
   test("getRegion no wrap") {
-    assertResult(toArrayList(List((1, 3), (4, 5), (7, 9)))) (getRegion(2, 1, 1, 3, 3, false, false))
-    assertResult(toArrayList(List((0, 5), (6, 9)))) (getRegion(2, 1, 2, 3, 3, false, false))
+    assertResult(toArrayList(List((1, 3), (4, 5), (7, 9)))) (testGetRegion(2, 1, 1, 3, 3, false, false))
+    assertResult(toArrayList(List((0, 5), (6, 9)))) (testGetRegion(2, 1, 2, 3, 3, false, false))
     assertResult(toArrayList(List(
       (2, 6), (8, 12), (14, 16), (17, 18), (20, 24), (26, 30)
-    ))) (getRegion(4, 2, 2, 6, 6, false, false))
+    ))) (testGetRegion(4, 2, 2, 6, 6, false, false))
 
-    assertResult(toArrayList(List((1, 3), (4, 5)))) (getRegion(2, 1, 1, 3, 2, false, false))
+    assertResult(toArrayList(List((1, 3), (4, 5)))) (testGetRegion(2, 1, 1, 3, 2, false, false))
 
     assertResult(toArrayList(List(
       (3,5), (6,7)
-    ))) (getRegion(5, 0, 2, 7, 1, false, false))
+    ))) (testGetRegion(5, 0, 2, 7, 1, false, false))
   }
 
-  test("getRegion with x wrap") {
+  test("testGetRegion with x wrap") {
     assertResult(toArrayList(List(
       (0,1), (2, 7), (8, 13), (14, 16), (17, 19), (20, 25), (26, 30)
-    ))) (getRegion(4, 2, 2, 6, 6, true, false))
+    ))) (testGetRegion(4, 2, 2, 6, 6, true, false))
 
     assertResult(toArrayList(List(
       (0,1), (3,5), (6,7)
-    ))) (getRegion(5, 0, 2, 7, 1, true, false))
+    ))) (testGetRegion(5, 0, 2, 7, 1, true, false))
 
     assertResult(toArrayList(List(
       (3,5), (6,7)
-    ))) (getRegion(0, 5, 2, 1, 7, true, false))
+    ))) (testGetRegion(0, 5, 2, 1, 7, true, false))
 
     assertResult(toArrayList(List(
       (0,1), (2,4), (6,7)
-    ))) (getRegion(1, 0, 2, 7, 1, true, false))
+    ))) (testGetRegion(1, 0, 2, 7, 1, true, false))
   }
 
   test("getRegion with y wrap") {
     assertResult(toArrayList(List(
       (0,1), (3,5), (6,7)
-    ))) (getRegion(0, 5, 2, 1, 7, false, true))
+    ))) (testGetRegion(0, 5, 2, 1, 7, false, true))
 
     assertResult(toArrayList(List(
       (0,1), (2,4), (6,7)
-    ))) (getRegion(0, 1, 2, 1, 7, false, true))
+    ))) (testGetRegion(0, 1, 2, 1, 7, false, true))
 
     assertResult(toArrayList(List(
       (0,1), (2,4)
-    ))) (getRegion(1, 0, 2, 7, 1, false, true))
+    ))) (testGetRegion(1, 0, 2, 7, 1, false, true))
   }
 
   test("getRegion with x&y wrap") {
-    assertResult(toArrayList(List((0,5), (6,9)))) (getRegion(2, 1, 1, 3, 3, true, true))
-    assertResult(toArrayList(List((0,5), (6,9)))) (getRegion(2, 1, 2, 3, 3, true, true))
+    assertResult(toArrayList(List((0,5), (6,9)))) (testGetRegion(2, 1, 1, 3, 3, true, true))
+    assertResult(toArrayList(List((0,5), (6,9)))) (testGetRegion(2, 1, 2, 3, 3, true, true))
 
     assertResult(toArrayList(List(
       (0,1), (2, 7), (8, 13), (14, 16), (17, 19), (20, 25), (26, 30)
-    ))) (getRegion(4, 2, 2, 6, 6, true, true))
+    ))) (testGetRegion(4, 2, 2, 6, 6, true, true))
 
-    assertResult(toArrayList(List((0, 5)))) (getRegion(2, 1, 1, 3, 2, true, true))
+    assertResult(toArrayList(List((0, 5)))) (testGetRegion(2, 1, 1, 3, 2, true, true))
   }
-
 }
