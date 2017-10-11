@@ -98,10 +98,11 @@ public strictfp class InRadiusOrCone
       cachedIDs = new HashSet<Long>(0);
     }
 
-    System.out.println(radius);
     ArrayList<Tuple2<Object, Object>> regions = world.topology().getRegion((int) StrictMath.floor(startX), (int) StrictMath.floor(startY), (int) StrictMath.ceil(radius) + 1);
+//    System.out.println(regions);
     Patch patches[] = new Patch[world.patches().count()];
     Agent worldPatches[] = ((ArrayAgentSet) world.patches()).array();
+//    System.out.println(Arrays.toString(worldPatches));
     int curr = 0;
     int length;
     for (Tuple2<Object, Object> region : regions) {
@@ -111,8 +112,6 @@ public strictfp class InRadiusOrCone
       System.arraycopy(worldPatches, r1, patches, curr, length);
       curr += length;
     }
-
-    System.out.println(curr);
 
     for (int i = 0; i < curr; i++) {
 //      for (int dx = dxmin; dx <= dxmax; dx++) {

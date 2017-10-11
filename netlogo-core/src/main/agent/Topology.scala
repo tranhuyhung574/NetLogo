@@ -79,9 +79,16 @@ extends Neighbors {
   // - JD, ST 6/3/04
 
   // TODO keep track of number of patches
-  def getRegion(x: Int, y: Int, r: Int): ArrayList[(Int, Int)] = {
+  def getRegion(X: Int, Y: Int, r: Int): ArrayList[(Int, Int)] = {
     val w = world.worldWidth
     val h = world.worldHeight
+
+    // orient x and y to world position.
+//    println("X: " + X + "\nY: " + Y + "\nw: " + w + "\nh: " + h + "\nr: " + r)
+//    println("min x: " + world.minPxcor + "\nmax x: " + world.maxPxcor + "\nmin y: " + world.minPycor + "\nmax y: " + world.maxPycor)
+    val x = X - world.minPxcor
+    val y = h - 1 - (Y - world.minPycor)
+//    println("x: " + x + "\ny: " + y)
     val ans: ArrayList[(Int, Int)] = new ArrayList()
     var (start, end, xx, yy) = (-1, -1, -1, -1)
 
@@ -109,7 +116,6 @@ extends Neighbors {
     if (start != -1) {
       ans.add((start, end))
     }
-
     ans
   }
 
