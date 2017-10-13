@@ -1,7 +1,8 @@
 package org.nlogo.workspace
 
 import org.nlogo.core.{ AgentKind, CompilerException, Model }
-import org.nlogo.api.{ FileIO, PreviewCommands, SimpleJobOwner }
+import org.nlogo.api.{ FileIO, PreviewCommands, SimpleJobOwner, Version }
+import org.nlogo.fileformat
 import org.nlogo.nvm.Procedure
 import java.awt.image.BufferedImage
 
@@ -14,7 +15,7 @@ object PreviewCommandsRunner {
 
   def fromFactory(
     workspaceFactory: WorkspaceFactory with CurrentModelOpener): PreviewCommandsRunner = {
-    this(workspaceFactory, workspaceFactory.openCurrentModelIn)
+    this(workspaceFactory, workspaceFactory.currentVersion, workspaceFactory.openCurrentModelIn)
   }
 
   def fromModelContents(
@@ -26,22 +27,26 @@ object PreviewCommandsRunner {
       w.openModel(model)
       Option(modelPath).foreach(w.setModelPath)
     }
-    this(workspaceFactory, open, Some(previewCommands))
+    this(workspaceFactory, Version.getCurrent(model.version), open, Some(previewCommands))
   }
 
   def fromModelPath(
     workspaceFactory: WorkspaceFactory,
     modelPath: String): PreviewCommandsRunner = {
-    this(workspaceFactory, _.open(modelPath))
+      val version = fileformat.modelVersionAtPath(modelPath)
+      if (version.isEmpty)
+        throw new Exception(s"Invalid model path: $modelPath")
+      this(workspaceFactory, version.get, _.open(modelPath))
   }
 
   def initWorkspace(
     workspaceFactory: WorkspaceFactory,
+    version: Version,
     openModelIn: AbstractWorkspace => Unit,
     previewCommands: Option[PreviewCommands] = None): AbstractWorkspace = {
 
     def newWorkspace(openModelIn: AbstractWorkspace => Unit) = {
-      val ws = workspaceFactory.newInstance
+      val ws = workspaceFactory.newInstance(version.is3D)
       try {
         // set the seed before opening the model so it affects the `startup` procedure
         val jobOwner = new SimpleJobOwner(this.getClass.getName, ws.world.mainRNG, AgentKind.Observer)
@@ -73,10 +78,11 @@ object PreviewCommandsRunner {
 
   def apply(
     workspaceFactory: WorkspaceFactory,
+    version: Version,
     openModelIn: AbstractWorkspace => Unit,
     previewCommands: Option[PreviewCommands] = None): PreviewCommandsRunner = {
 
-    val ws = initWorkspace(workspaceFactory, openModelIn, previewCommands)
+    val ws = initWorkspace(workspaceFactory, version, openModelIn, previewCommands)
 
     try {
       ws.previewCommands match {

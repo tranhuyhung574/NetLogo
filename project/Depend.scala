@@ -78,7 +78,7 @@ object Depend {
       "lab/gui" -> List("lab","window"),
       "lex" -> List("api"),
       "lite" -> List("window"),
-      "log" -> List("api"),
+      "log" -> List("api", "fileformat"),
       "mc" -> List("workspace", "swing"),
       "nvm" -> List("agent"),
       "parse" -> List("core", "core/prim", "util"),

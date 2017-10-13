@@ -11,7 +11,7 @@ import org.scalatest.{ BeforeAndAfter, FunSuite }
 import scala.collection.JavaConverters._
 
 class ExtensionManagerTests extends FunSuite with BeforeAndAfter {
-  val helper = Helper.default
+  val helper = Helper.twoD
   val emptyManager = new ExtensionManager(
     helper.userInteraction, helper.evaluator, helper.messageCenter, helper.jarLoader)
 
@@ -28,7 +28,7 @@ class ExtensionManagerTests extends FunSuite with BeforeAndAfter {
     def extraLoaders: Seq[ExtensionLoader] = Seq()
 
     lazy val loadingManager = {
-      val m = Helper.default.extensionManager
+      val m = Helper.twoD.extensionManager
       extraLoaders.foreach(m.addLoader)
       m
     }

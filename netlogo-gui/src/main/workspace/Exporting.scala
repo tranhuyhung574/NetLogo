@@ -3,7 +3,7 @@
 package org.nlogo.workspace
 
 import org.nlogo.agent.AbstractExporter
-import org.nlogo.api.Dump
+import org.nlogo.api.{ Dump, ThreeDVersion, TwoDVersion, Version }
 import org.nlogo.plot.PlotExporter
 import java.io.{IOException,PrintWriter}
 
@@ -12,6 +12,10 @@ trait Exporting extends Plotting { this: AbstractWorkspace =>
 
   def exportDrawingToCSV(writer:PrintWriter)
   def exportOutputAreaToCSV(writer:PrintWriter)
+
+  protected def exportVersion: Version =
+    if (dialect.is3D) ThreeDVersion
+    else              TwoDVersion
 
   @throws(classOf[IOException])
   def exportWorld(filename: String) {
@@ -22,7 +26,7 @@ trait Exporting extends Plotting { this: AbstractWorkspace =>
         exportOutputAreaToCSV(writer)
         exportPlotsToCSV(writer)
         extensionManager.exportWorld(writer)
-    } }.export("world",modelTracker.modelFileName,"")
+    } }.export("world",modelTracker.modelFileName, exportVersion, "")
   }
 
   def exportWorld(writer:PrintWriter) {
@@ -51,7 +55,7 @@ trait Exporting extends Plotting { this: AbstractWorkspace =>
         exportInterfaceGlobals(writer)
         new PlotExporter(plotManager.getPlot(plotName),Dump.csv).export(writer)
       }
-    }.export("plot",modelTracker.modelFileName,"")
+    }.export("plot",modelTracker.modelFileName, exportVersion, "")
   }
 
   def exportInterfaceGlobals(writer: PrintWriter): Unit = {
@@ -74,6 +78,6 @@ trait Exporting extends Plotting { this: AbstractWorkspace =>
           writer.println()
         }
       }
-    }.export("plots",modelTracker.modelFileName,"")
+    }.export("plots",modelTracker.modelFileName, exportVersion, "")
   }
 }

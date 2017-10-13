@@ -23,7 +23,7 @@ trait SaveModel {
         fileFromTracker(modelTracker) orElse validFilePath(controller, loader, modelTracker.getModelType)
       savePath.flatMap { path =>
         if (currentVersion.compatibleVersion(model.version) ||
-          controller.shouldSaveModelOfDifferingVersion(model.version)) {
+          controller.shouldSaveModelOfDifferingVersion(currentVersion, model.version)) {
             Some({ () => loader.save(model.copy(version = currentVersion.version), path) })
           } else
             None
@@ -56,7 +56,7 @@ trait SaveModel {
 object SaveModel extends SaveModel {
   trait Controller {
     def chooseFilePath(modelType: ModelType): Option[URI]
-    def shouldSaveModelOfDifferingVersion(version: String): Boolean
+    def shouldSaveModelOfDifferingVersion(currentVersion: Version, saveVersion: String): Boolean
     def warnInvalidFileFormat(format: String): Unit
   }
 }

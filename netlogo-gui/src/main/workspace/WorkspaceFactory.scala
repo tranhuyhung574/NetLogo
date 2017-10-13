@@ -3,11 +3,13 @@
 package org.nlogo.workspace
 
 import org.nlogo.nvm.Workspace
+import org.nlogo.api.Version
 
 trait CurrentModelOpener {
   def openCurrentModelIn(workspace: Workspace): Unit
+  def currentVersion: Version
 }
 
 trait WorkspaceFactory {
-  def newInstance: AbstractWorkspace
+  def newInstance(is3D: Boolean): AbstractWorkspace
 }

@@ -2,7 +2,7 @@
 
 package org.nlogo.app
 
-import org.nlogo.api.{ ModelLoader, ModelSections, Version}
+import org.nlogo.api.{ ModelLoader, ModelSections, TwoDVersion, ThreeDVersion, Version }
 import org.nlogo.core.Model
 
 class ModelSaver(model: ModelSections, loader: ModelLoader) {
@@ -17,7 +17,8 @@ class ModelSaver(model: ModelSections, loader: ModelLoader) {
       widgets      = model.widgets,
       info         = model.info,
       turtleShapes = model.turtleShapes,
-      linkShapes   = model.linkShapes)
+      linkShapes   = model.linkShapes,
+      version      = model.version)
     if (model.additionalSections.isEmpty)
       m
     else
@@ -25,6 +26,10 @@ class ModelSaver(model: ModelSections, loader: ModelLoader) {
         case (newModel, section) => section.updateModel(newModel)
       }
   }
+
+  def currentVersion: Version =
+    if (Version.is3D(currentModel.version)) ThreeDVersion
+    else TwoDVersion
 
   def currentModelInCurrentVersion: Model =
     currentModel.copy(version = Version.version)

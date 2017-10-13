@@ -131,6 +131,10 @@ object App{
     pico.addComponent(classOf[CodeToHtml])
     pico.addComponent(classOf[ModelSaver])
     pico.add("org.nlogo.gl.view.ViewManager")
+    if (Version.is3D)
+      pico.add("org.nlogo.gl.view.ThreeDGLViewFactory")
+    else
+      pico.add("org.nlogo.gl.view.TwoDGLViewFactory")
     // Anything that needs a parent Frame, we need to use ComponentParameter
     // and specify classOf[AppFrame], otherwise PicoContainer won't know which
     // Frame to use - ST 6/16/09
@@ -158,9 +162,10 @@ object App{
     // call HeadlessWorkspace's newInstance() method. - ST 3/11/09
     // And we'll conveniently reuse it for the preview commands editor! - NP 2015-11-18
     val factory = new WorkspaceFactory() with CurrentModelOpener {
-      def newInstance: AbstractWorkspace =
+      def newInstance(is3D: Boolean): AbstractWorkspace =
         Class.forName("org.nlogo.headless.HeadlessWorkspace")
-          .getMethod("newInstance").invoke(null).asInstanceOf[AbstractWorkspace]
+          .getMethod("newInstance").invoke(is3D).asInstanceOf[AbstractWorkspace]
+      def currentVersion: Version = pico.getComponent(classOf[ModelSaver]).currentVersion
       def openCurrentModelIn(w: Workspace): Unit = {
         w.setModelPath(app.workspace.getModelPath)
         w.openModel(pico.getComponent(classOf[ModelSaver]).currentModelInCurrentVersion)
@@ -179,7 +184,7 @@ object App{
     pico.add("org.nlogo.app.interfacetab.CommandCenter")
     pico.add("org.nlogo.app.interfacetab.InterfaceTab")
     pico.addComponent(classOf[Tabs])
-    app = startConfiguredApp(Version.is3D)
+    app = startConfiguredApp(true)
     // It's pretty silly, but in order for the splash screen to show up
     // for more than a fraction of a second, we want to initialize as
     // much stuff as we can from main() before handing off to the event
@@ -189,7 +194,9 @@ object App{
     // exceptions because we're doing too much on the main thread.
         // Hey, it's important to make a good first impression.
     //   - ST 8/19/03
-    org.nlogo.awt.EventQueue.invokeAndWait(()=>app.finishStartup(appHandler))
+
+    // org.nlogo.awt.EventQueue.invokeAndWait(()=>app.finishStartup(appHandler, Version.getCurrent(Version.is3D)))
+    org.nlogo.awt.EventQueue.invokeAndWait(()=>app.finishStartup(appHandler, org.nlogo.api.ThreeDVersion))
   }
 
   private def processCommandLineArguments(args: Array[String]) {
@@ -381,10 +388,16 @@ class App(config: WorkspaceConfig, val frame: JFrame with LinkParent with LinkRo
   var labManager:LabManagerInterface = null
   var recentFilesMenu: RecentFilesMenu = null
   lazy val modelingCommons = pico.getComponent(classOf[ModelingCommonsInterface])
+  private var modelSaver: ModelSaver = _
   private val ImportWorldURLProp = "netlogo.world_state_url"
   private val ImportRawWorldURLProp = "netlogo.raw_world_state_url"
 
   val isMac = System.getProperty("os.name").startsWith("Mac")
+
+  def version =
+    if (config.compiler.dialect.is3D) ThreeDVersion.version
+    else TwoDVersion.version
+
   locally {
     frame.addLinkComponent(this)
 
@@ -460,12 +473,14 @@ class App(config: WorkspaceConfig, val frame: JFrame with LinkParent with LinkRo
   @throws(classOf[UserCancelException])
   def quit(){ fileManager.quit() }
 
-  private[app] def finishStartup(appHandler: Object) {
+  private[app] def finishStartup(appHandler: Object, currentVersion: Version) {
     val app = pico.getComponent(classOf[App])
     val currentModelAsString = {() =>
       val modelSaver = pico.getComponent(classOf[ModelSaver])
-      modelSaver.modelAsString(modelSaver.currentModel, ModelReader.modelSuffix)
+      val is3D = Version.is3D(modelSaver.currentModel.version)
+      modelSaver.modelAsString(modelSaver.currentModel, ModelReader.modelSuffix(is3D))
     }
+    modelSaver = pico.getComponent(classOf[ModelSaver])
     pico.add(classOf[ModelingCommonsInterface],
           "org.nlogo.mc.ModelingCommons",
           Array[Parameter] (
@@ -496,7 +511,8 @@ class App(config: WorkspaceConfig, val frame: JFrame with LinkParent with LinkRo
       new ConstantParameter(modelTracker),
       new ComponentParameter(), new ComponentParameter(),
       new ComponentParameter(), new ComponentParameter(),
-      new ConstantParameter(menuBar), new ConstantParameter(menuBar))
+      new ConstantParameter(menuBar), new ConstantParameter(menuBar),
+      new ConstantParameter(currentVersion))
     setFileManager(pico.getComponent(classOf[FileManager]))
 
     val viewManager = pico.getComponent(classOf[GLViewManagerInterface])
@@ -519,7 +535,7 @@ class App(config: WorkspaceConfig, val frame: JFrame with LinkParent with LinkRo
     //  - ST 8/16/03
     frame.pack()
 
-    loadDefaultModel()
+    loadDefaultModel(currentVersion)
     // smartPack respects the command center's current size, rather
     // than its preferred size, so we have to explicitly set the
     // command center to the size we want - ST 1/7/05
@@ -555,13 +571,13 @@ class App(config: WorkspaceConfig, val frame: JFrame with LinkParent with LinkRo
   }
 
   ///
-  private def loadDefaultModel(){
+  private def loadDefaultModel(currentVersion: Version){
     if (commandLineModel != null) {
       if (commandLineModelIsLaunch) { // --launch through InstallAnywhere?
         // open up the blank model first so in case
         // the magic open fails for some reason
         // there's still a model loaded ev 3/7/06
-        fileManager.newModel()
+        fileManager.newModel(currentVersion)
         open(commandLineModel)
       }
       else libraryOpen(commandLineModel) // --open from command line
@@ -612,14 +628,14 @@ class App(config: WorkspaceConfig, val frame: JFrame with LinkParent with LinkRo
       }
       catch {
         case ex: java.net.ConnectException =>
-          fileManager.newModel()
+          fileManager.newModel(currentVersion)
           JOptionPane.showConfirmDialog(null,
             I18N.gui.getN("file.open.error.unloadable.message", commandLineURL),
             I18N.gui.get("file.open.error.unloadable.title"), JOptionPane.DEFAULT_OPTION)
       }
 
     }
-    else fileManager.newModel()
+    else fileManager.newModel(currentVersion)
   }
 
   /// zooming
@@ -724,7 +740,7 @@ class App(config: WorkspaceConfig, val frame: JFrame with LinkParent with LinkRo
   }
 
   private def magicOpen(name: String) {
-    val matches = org.nlogo.workspace.ModelsLibrary.findModelsBySubstring(name)
+    val matches = org.nlogo.workspace.ModelsLibrary.findModelsBySubstring(name, modelSaver.currentVersion)
     if (matches.isEmpty) commandLater("print \"no models matching \\\"" + name + "\\\" found\"")
     else {
       val fullName =
@@ -735,7 +751,7 @@ class App(config: WorkspaceConfig, val frame: JFrame with LinkParent with LinkRo
           if (i != -1) matches(i) else null
         }
       if (fullName != null) {
-        org.nlogo.workspace.ModelsLibrary.getModelPath(fullName).foreach { path =>
+        org.nlogo.workspace.ModelsLibrary.getModelPath(fullName, modelSaver.currentVersion).foreach { path =>
           val source = org.nlogo.api.FileIO.fileToString(path)(Codec.UTF8)
           org.nlogo.awt.EventQueue.invokeLater(() => openFromSource(source, path, ModelType.Library))
         }

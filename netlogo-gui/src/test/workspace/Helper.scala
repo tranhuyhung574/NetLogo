@@ -3,17 +3,14 @@
 package org.nlogo.workspace
 
 import org.nlogo.core.{ Dialect, DummyCompilationEnvironment, Femto }
-import org.nlogo.api.{ NetLogoLegacyDialect, NetLogoThreeDDialect, Version }
+import org.nlogo.api.{ NetLogoLegacyDialect, NetLogoThreeDDialect, SourceOwner }
 import org.nlogo.agent.{ World2D, World3D }
 import org.nlogo.nvm.{ JobManagerInterface, JobManagerOwner,
   PresentationCompilerInterface, Procedure }
 
 object Helper {
-  def defaultDialect =
-    if (Version.is3D) NetLogoThreeDDialect
-    else              NetLogoLegacyDialect
-
-  def default: Helper = new Helper(defaultDialect)
+  def twoD: Helper = new Helper(NetLogoLegacyDialect)
+  def threeD: Helper = new Helper(NetLogoThreeDDialect)
   def withDialect(dialect: Dialect): Helper = new Helper(dialect)
   class DummyJobManagerOwner extends JobManagerOwner {
     private def unsupported = throw new UnsupportedOperationException
@@ -30,7 +27,7 @@ object Helper {
 
 import Helper._
 
-class Helper(dialect: Dialect) {
+class Helper(dialect: Dialect) extends WorkspaceDependencies {
   lazy val messageCenter = new WorkspaceMessageCenter()
   lazy val modelTracker = new ModelTrackerImpl(messageCenter)
   lazy val world =
@@ -50,4 +47,9 @@ class Helper(dialect: Dialect) {
   }
   lazy val extensionManager =
     new ExtensionManager(userInteraction, evaluator, messageCenter, jarLoader)
+  lazy val compilerServices =
+    new LiveCompilerServices(compiler, extensionManager, world, evaluator)
+  lazy val owner: JobManagerOwner = new HeadlessJobManagerOwner(messageCenter)
+  lazy val sourceOwners: Seq[SourceOwner] = Seq()
+  lazy val hubNetManagerFactory: org.nlogo.workspace.HubNetManagerFactory = null
 }

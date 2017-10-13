@@ -2,25 +2,21 @@
 
 package org.nlogo.workspace
 
-import org.nlogo.agent.{ World2D, World3D }
-import org.nlogo.nvm.PresentationCompilerInterface
-import org.nlogo.core.{ AgentKind, Femto }
-import org.nlogo.api.{ AggregateManagerInterface, NetLogoLegacyDialect, Version }
+import org.nlogo.core.AgentKind
+import org.nlogo.api.{ NetLogoLegacyDialect, NetLogoThreeDDialect }
 
 /**
  * handy for use in unit tests
  */
 
-class DummyAbstractWorkspace
-extends AbstractWorkspace(
-    if(Version.is3D) new World3D else new World2D,
-    null) // no hubNetManagerFactory
+class DummyAbstractWorkspace(helper: Helper)
+extends AbstractWorkspace(helper)
 {
+  def this(is3D: Boolean) = this(new Helper(if (is3D) NetLogoThreeDDialect else NetLogoLegacyDialect))
   dispose() // don't leak a JobThread - ST 5/2/13
   private def unsupported = throw new UnsupportedOperationException
   override val isHeadless = true
   override def compilerTestingMode = false
-  override def aggregateManager: AggregateManagerInterface = unsupported
   override def waitFor(runnable: org.nlogo.api.CommandRunnable): Unit = unsupported
   override def waitForResult[T](runnable: org.nlogo.api.ReporterRunnable[T]): T = unsupported
   override def waitForQueuedEvents(): Unit = unsupported
@@ -68,8 +64,6 @@ extends AbstractWorkspace(
   override def updateDisplay(haveWorldLockAlready: Boolean,forced: Boolean): Unit = unsupported
   override def zipLogFiles(filename: String) = unsupported
   override def deleteLogFiles(): Unit = unsupported
-  override def compiler: PresentationCompilerInterface =
-    Femto.get("org.nlogo.compile.Compiler", NetLogoLegacyDialect)
 
   def openModel(model: org.nlogo.core.Model): Unit = unsupported
   def renderer: org.nlogo.api.RendererInterface = unsupported

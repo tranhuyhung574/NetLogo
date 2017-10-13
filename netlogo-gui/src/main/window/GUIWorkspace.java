@@ -546,7 +546,7 @@ public abstract strictfp class GUIWorkspace // can't be both abstract and strict
 
   private void open3DView() {
     try {
-      glView.open();
+      glView.open(compiler().dialect().is3D());
       set2DViewEnabled(false);
     } catch (JOGLLoadingException jlex) {
       String message = jlex.getMessage();

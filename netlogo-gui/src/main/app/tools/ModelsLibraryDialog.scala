@@ -23,7 +23,7 @@ import javax.swing.event.{ AncestorEvent, AncestorListener, DocumentEvent, Docum
   TreeSelectionEvent, TreeSelectionListener }
 
 import org.nlogo.core.I18N
-import org.nlogo.api.FileIO
+import org.nlogo.api.{ FileIO, Version }
 import org.nlogo.awt.{ Positioning, UserCancelException }
 import org.nlogo.swing.{ BrowserLauncher, ModalProgressTask, Utils },
   Utils.{ addEscKeyAction, icon }
@@ -38,11 +38,11 @@ object ModelsLibraryDialog {
 
   // finish is a callback called *on the UI Thread* with the URI of the selected model
   @throws(classOf[UserCancelException])
-  def open(parent: Frame, onSelect: URI => Unit): Unit = {
+  def open(parent: Frame, version: Version, onSelect: URI => Unit): Unit = {
     if (me == null) {
       ModalProgressTask.onUIThread(parent, I18N.gui.get("modelsLibrary.loading"), { () =>
         try {
-          buildRootNode.foreach { node =>
+          buildRootNode(version).foreach { node =>
             SwingUtilities.invokeLater({ () =>
               finishOpen(new ModelsLibraryDialog(parent, node), onSelect)
             })
@@ -67,8 +67,8 @@ object ModelsLibraryDialog {
 
   // this *is* called on the background thread. It's probably a bad idea
   // to call it on the UI thread, as it performs many file operations in the background
-  private def buildRootNode: Option[Node] = {
-    ModelsLibrary.scanForModels(false)
+  private def buildRootNode(version: Version): Option[Node] = {
+    ModelsLibrary.scanForModels(version, false)
     val crossReferencedNode =
       for {
         rootNode@ModelsLibrary.Tree(_, _, _) <- ModelsLibrary.rootNode

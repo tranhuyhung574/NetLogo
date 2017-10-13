@@ -26,7 +26,7 @@ import org.nlogo.swing.BrowserLauncher
  * for example code.
  */
 
-class InterfaceComponent(frame: java.awt.Frame)
+class InterfaceComponent(frame: java.awt.Frame, val is3D: Boolean)
 extends AppletPanel(frame,
                     new java.awt.event.MouseAdapter {
                       override def mouseClicked(e: java.awt.event.MouseEvent) {

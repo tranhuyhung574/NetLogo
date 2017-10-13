@@ -6,25 +6,25 @@ import java.awt.Frame
 
 import org.nlogo.core.{ Model, Femto }
 import org.nlogo.agent.{ CompilationManagement, World }
-import org.nlogo.api.{ AggregateManagerInterface, ControlSet, NetLogoThreeDDialect, NetLogoLegacyDialect, RendererInterface, Version }
+import org.nlogo.api.{ AggregateManagerInterface, ControlSet, NetLogoThreeDDialect, NetLogoLegacyDialect, RendererInterface }
 import org.nlogo.nvm.PresentationCompilerInterface
 import org.nlogo.window.{ GUIJobManagerOwner, GUIWorkspace, GUIWorkspaceScala, NetLogoListenerManager, WorkspaceConfig }
 import org.nlogo.workspace.{ ModelTrackerImpl, WorkspaceMessageCenter }
 
 object LiteWorkspace {
-  def compiler =
+  def compiler(is3D: Boolean) =
     Femto.get[PresentationCompilerInterface]("org.nlogo.compile.Compiler",
-      if (Version.is3D) NetLogoThreeDDialect else NetLogoLegacyDialect)
+      if (is3D) NetLogoThreeDDialect else NetLogoLegacyDialect)
 }
 
 class LiteWorkspace(config: WorkspaceConfig)
   extends GUIWorkspace(config) {
 
-  def this(world: World with CompilationManagement, frame: Frame, listenerManager: NetLogoListenerManager, controlSet: ControlSet) =
+  def this(world: World with CompilationManagement, frame: Frame, listenerManager: NetLogoListenerManager, controlSet: ControlSet, is3D: Boolean) =
     this(
       WorkspaceConfig
         .default
-        .withCompiler(LiteWorkspace.compiler)
+        .withCompiler(LiteWorkspace.compiler(is3D))
         .withKioskLevel(GUIWorkspace.KioskLevel.MODERATE)
         .withWorld(world)
         .withFrame(frame)
@@ -41,7 +41,7 @@ class LiteWorkspace(config: WorkspaceConfig)
 
   @deprecated("LiteWorkspace can no longer be an actual applet, omit first two arguments", "6.1.0")
   def this(appletPanel: AppletPanel, isApplet: Boolean, world: World with CompilationManagement, frame: java.awt.Frame, listenerManager: NetLogoListenerManager, controlSet: ControlSet) =
-    this(world, frame, listenerManager, controlSet)
+    this(world, frame, listenerManager, controlSet, false)
 
   val aggregateManager =
     Femto.get[AggregateManagerInterface]("org.nlogo.sdm.AggregateManagerLite")

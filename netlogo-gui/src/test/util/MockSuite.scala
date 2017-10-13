@@ -2,15 +2,18 @@
 
 package org.nlogo.util
 
-import org.scalatest.FunSuite
 import org.jmock.{Expectations, Mockery, Sequence}
 import org.jmock.integration.junit4.JUnit4Mockery
-import scala.util.DynamicVariable
-import org.hamcrest.{Description, BaseMatcher, Matcher}
+
 import org.jmock.api.Action
-import scala.reflect.ClassTag
 import org.jmock.lib.legacy.ClassImposteriser
 
+import org.hamcrest.{Description, BaseMatcher, Matcher}
+
+import org.scalatest.{ FunSuite, Tag }
+
+import scala.util.DynamicVariable
+import scala.reflect.ClassTag
 import scala.language.implicitConversions
 
 /**
@@ -64,8 +67,8 @@ import scala.language.implicitConversions
 trait MockSuite extends FunSuite {
 
   // this is the main test method provided by this trait.
-  def mockTest(name: String)(f: => Unit) {
-    test(name) {
+  def mockTest(name: String, tags: Tag*)(f: => Unit) {
+    test(name, tags: _*) {
       _context.withValue(new JUnit4Mockery(){setImposteriser(ClassImposteriser.INSTANCE)}) {
         _expectations.withValue(new Expectations()) {
           f

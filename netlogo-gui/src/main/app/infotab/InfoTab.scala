@@ -15,7 +15,7 @@ import javax.swing.text.html.HTMLDocument
 
 import org.nlogo.app.common.{ FindDialog, MenuTab, UndoRedoActions }
 import org.nlogo.awt.{ Fonts, Hierarchy }
-import org.nlogo.core.I18N
+import org.nlogo.core.{ Dialect, I18N }
 import org.nlogo.editor.UndoManager
 import org.nlogo.swing.Implicits._
 import org.nlogo.swing.{ OptionDialog, ToolBar, ToolBarButton, ToolBarActionButton,
@@ -23,7 +23,7 @@ import org.nlogo.swing.{ OptionDialog, ToolBar, ToolBarButton, ToolBarActionButt
   BrowserLauncher.docPath, Utils.icon
 import org.nlogo.window.{ Events => WindowEvents, Zoomable }
 
-class InfoTab(attachModelDir: String => String)
+class InfoTab(attachModelDir: String => String, dialect: Dialect)
   extends JPanel
   with DocumentListener
   with MenuTab
@@ -130,7 +130,7 @@ class InfoTab(attachModelDir: String => String)
   private def updateEditorPane(str: String) {
     if(str != editorPane.getText) {
       editorPane.getDocument.asInstanceOf[HTMLDocument].setBase(new File(attachModelDir(".")).toURI.toURL)
-      val html = InfoFormatter(str, editorPaneFontSize)
+      val html = InfoFormatter(str, dialect, editorPaneFontSize)
       //println(html)
       editorPane.setText(html)
       editorPane.setCaretPosition(0)

@@ -98,7 +98,7 @@ class EditorColorizer(compiler: PresentationCompilerInterface, extensionManager:
       .map(_.text)
 
   def doHelp(comp: java.awt.Component, name: String) {
-    QuickHelp.doHelp(comp, name)
+    QuickHelp.doHelp(comp, name, compiler.dialect.is3D)
   }
 
 }

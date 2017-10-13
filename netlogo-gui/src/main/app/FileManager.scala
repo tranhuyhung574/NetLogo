@@ -25,7 +25,7 @@ import org.nlogo.workspace.{ AbstractWorkspace, ModelTracker, OpenModel, OpenMod
   OpenModelFromSource, SaveModel, SaveModelAs }
 
 object FileManager {
-  class NewAction(manager: FileManager, parent: Container)
+  class NewAction(manager: FileManager, parent: Container, version: Version)
   extends ExceptionCatchingAction(I18N.gui.get("menu.file.new"), parent)
   with MenuAction {
     category    = UserAction.FileCategory
@@ -37,7 +37,7 @@ object FileManager {
     @throws(classOf[IOException])
     override def action(): Unit = {
       manager.aboutToCloseFiles()
-      manager.newModel()
+      manager.newModel(version)
     }
   }
 
@@ -73,7 +73,7 @@ object FileManager {
     }
   }
 
-  class ModelsLibraryAction(manager: FileManager, parent: Component)
+  class ModelsLibraryAction(manager: FileManager, parent: Component, modelSaver: ModelSaver)
   extends ExceptionCatchingAction(I18N.gui.get("menu.file.modelsLibrary"), parent)
   with MenuAction {
     category    = UserAction.FileCategory
@@ -84,7 +84,7 @@ object FileManager {
     @throws(classOf[UserCancelException])
     override def action(): Unit = {
       manager.aboutToCloseFiles()
-      ModelsLibraryDialog.open(frame,
+      ModelsLibraryDialog.open(frame, modelSaver.currentVersion,
       { sourceURI => manager.openFromURI(sourceURI, ModelType.Library) })
     }
   }
@@ -141,7 +141,7 @@ object FileManager {
     group    = UserAction.FileShareGroup
 
     // disabled for 3-D since you can't do that in NetLogo Web - RG 9/10/15
-    setEnabled(! Version.is3D)
+    setEnabled(! modelSaver.currentVersion.is3D)
 
     @throws(classOf[UserCancelException])
     @throws(classOf[IOException])
@@ -216,8 +216,8 @@ object FileManager {
         .flatMap(name => FileIO.resolvePath(name, Paths.get(workspace.getModelPath)))
         .foreach { path =>
         val version =
-          if (Version.is3D) "NetLogo 3D 5.3.1"
-          else              "NetLogo 5.3.1"
+          if (modelSaver.currentVersion.is3D) "NetLogo 3D 5.3.1"
+          else                                "NetLogo 5.3.1"
         val tempModel = modelSaver.currentModel.copy(code = tab.innerSource, version = version)
         modelConverter(tempModel, path) match {
           case SuccessfulConversion(originalModel, m) => tab.innerSource = m.code
@@ -244,7 +244,8 @@ class FileManager(workspace: AbstractWorkspace,
   dirtyMonitor: DirtyMonitor,
   modelSaver: ModelSaver,
   eventRaiser: AnyRef,
-  parent: Container)
+  parent: Container,
+  version: Version)
     extends OpenModelEvent.Handler
     with LoadModelEvent.Handler {
   private var firstLoad: Boolean = true
@@ -286,12 +287,12 @@ class FileManager(workspace: AbstractWorkspace,
   }
 
   private def openModelURI(uri: URI): (OpenModel.Controller) => Option[Model] =
-    ((fileController: OpenModel.Controller) => OpenModelFromURI(uri, fileController, modelLoader, modelConverter, Version))
+    ((fileController: OpenModel.Controller) => OpenModelFromURI(uri, fileController, modelLoader, modelConverter, modelSaver.currentVersion))
 
   def openFromSource(uri: URI, modelSource: String, modelType: ModelType): Unit = {
     loadModel(uri,
       (fileController: OpenModel.Controller) =>
-        OpenModelFromSource(uri, modelSource, fileController, modelLoader, modelConverter, Version))
+        OpenModelFromSource(uri, modelSource, fileController, modelLoader, modelConverter, modelSaver.currentVersion))
           .foreach(m => openFromModel(m, uri, modelType))
   }
 
@@ -322,12 +323,15 @@ class FileManager(workspace: AbstractWorkspace,
 
   @throws(classOf[UserCancelException])
   @throws(classOf[IOException])
-  def newModel(): Unit = {
+  def newModel(version: Version): Unit = {
     try {
-      openFromModel(modelLoader.emptyModel(modelSuffix), getClass.getResource(emptyModelPath).toURI, ModelType.New)
+      openFromModel(
+        modelLoader.emptyModel(modelSuffix(version.is3D)),
+        getClass.getResource(emptyModelPath(version.is3D)).toURI,
+        ModelType.New)
     } catch  {
       case ex: URISyntaxException =>
-        println("Unable to locate empty model: " + emptyModelPath)
+        println("Unable to locate empty model: " + emptyModelPath(version.is3D))
     }
   }
 
@@ -335,7 +339,7 @@ class FileManager(workspace: AbstractWorkspace,
   private[app] def saveModel(saveAs: Boolean): Unit = {
     val saveThunk = {
       val saveModel = if (saveAs) SaveModelAs else SaveModel
-      saveModel(currentModel, modelLoader, controller, modelTracker, Version)
+      saveModel(currentModel, modelLoader, controller, modelTracker, modelSaver.currentVersion)
     }
 
     // if there's no thunk, the user canceled the save
@@ -385,7 +389,7 @@ class FileManager(workspace: AbstractWorkspace,
       val r = thunk()
       r.foreach { uri =>
         val path = Paths.get(uri).toString
-        modelSaver.setCurrentModel(modelSaver.currentModel.copy(version = Version.version))
+        modelSaver.setCurrentModel(modelSaver.currentModelInCurrentVersion)
         new ModelSavedEvent(path).raise(eventRaiser)
       }
       result = Some(r)
@@ -395,10 +399,10 @@ class FileManager(workspace: AbstractWorkspace,
   def currentModel: Model = modelSaver.currentModel
 
   def actions: Seq[Action] = Seq(
-    new NewAction(this, parent),
+    new NewAction(this, parent, version),
     new OpenAction(this, parent),
     new QuitAction(this, parent),
-    new ModelsLibraryAction(this, parent),
+    new ModelsLibraryAction(this, parent, modelSaver),
     new SaveAsNetLogoWebAction(this, modelTracker, modelSaver, parent),
     new ImportClientAction(this, workspace, parent))
 

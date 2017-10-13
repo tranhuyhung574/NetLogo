@@ -14,12 +14,12 @@ import org.nlogo.workspace.{ ModelTracker, SaveModel }
 import scala.util.Try
 
 object DirtyMonitor {
-  val autoSaveFileName = {
+  def autoSaveBaseName: String = {
     val df = new java.text.SimpleDateFormat("yyyy-MM-dd.HH_mm_ss",
                                             java.util.Locale.US)
     System.getProperty("java.io.tmpdir") +
       System.getProperty("file.separator") + "autosave_" +
-      df.format(new java.util.Date()) + "." + ModelReader.modelSuffix
+      df.format(new java.util.Date()) + "."
   }
 }
 
@@ -52,8 +52,13 @@ with SaveModel.Controller
     frame.setTitle(title(path))
   }
 
+  private lazy val baseSaveName = DirtyMonitor.autoSaveBaseName
+
+  def autoSaveFileName(is3D: Boolean): String =
+    baseSaveName + ModelReader.modelSuffix(is3D)
+
   def handle(e: AboutToQuitEvent) {
-    new java.io.File(DirtyMonitor.autoSaveFileName).delete()
+    new java.io.File(autoSaveFileName(Version.is3D(modelSaver.currentModel.version))).delete()
     Exceptions.ignoring(classOf[IOException]) {
       priorTempFile.foreach(Files.deleteIfExists)
     }
@@ -135,8 +140,8 @@ with SaveModel.Controller
 
   // chooseFilePath is used when the file doesn't yet have a path
   def chooseFilePath(modelType: ModelType): Option[URI] =
-    Some(Paths.get(DirtyMonitor.autoSaveFileName).toUri)
+    Some(Paths.get(autoSaveFileName(Version.is3D(modelSaver.currentModel.version))).toUri)
 
-  def shouldSaveModelOfDifferingVersion(version: String): Boolean = true
+  def shouldSaveModelOfDifferingVersion(currentVersion: Version, saveVersion: String): Boolean = true
   def warnInvalidFileFormat(format: String): Unit = {}
 }

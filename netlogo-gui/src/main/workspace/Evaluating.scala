@@ -68,6 +68,7 @@ trait Evaluating extends { this: AbstractWorkspace =>
 
   val defaultOwner =
     new SimpleJobOwner(getClass.getSimpleName, world.mainRNG, AgentKind.Observer)
+
   /**
    * Runs NetLogo commands and waits for them to complete.
    *

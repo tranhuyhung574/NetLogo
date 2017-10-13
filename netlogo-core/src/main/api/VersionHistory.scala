@@ -2,8 +2,6 @@
 
 package org.nlogo.api
 
-import Version.is3D
-
 object VersionHistory {
 
   def olderThan13pre1(version: String) =
@@ -211,23 +209,4 @@ object VersionHistory {
 
   def remove3d(version: String) =
     version.replace("NetLogo 3D", "NetLogo")
-
-  def olderThan3DPreview3(version: String) =
-    is3D(version) &&
-    (version.startsWith("NetLogo 3-D Preview 1") ||
-     version.startsWith("NetLogo 3-D Preview 2"))
-
-  def olderThan3DPreview4(version: String) =
-    is3D(version) &&
-    (version.startsWith("NetLogo 3-D Preview 1") ||
-     version.startsWith("NetLogo 3-D Preview 2") ||
-     version.startsWith("NetLogo 3D Preview 3"))
-
-  def olderThan3DPreview5(version: String) =
-    is3D(version) &&
-    (version.startsWith("NetLogo 3-D Preview 1") ||
-     version.startsWith("NetLogo 3-D Preview 2") ||
-     version.startsWith("NetLogo 3D Preview 3") ||
-     version.startsWith("NetLogo 3D Preview 4"))
-
 }

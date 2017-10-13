@@ -9,8 +9,8 @@ import java.nio.file.Paths
 // here and document it here.  The overriding method can simply call super(). - ST 6/1/05, 7/28/11
 
 import org.nlogo.api.{ ComponentSerialization, Version, RendererInterface, WorldDimensions3D,
-  AggregateManagerInterface, FileIO, LogoException, ModelReader, ModelType, NetLogoLegacyDialect,
-  NetLogoThreeDDialect, CommandRunnable, ReporterRunnable, WorldResizer }, ModelReader.modelSuffix
+  AggregateManagerInterface, FileIO, LogoException, ModelType, NetLogoLegacyDialect,
+  NetLogoThreeDDialect, CommandRunnable, ReporterRunnable, WorldResizer }
 import org.nlogo.core.{ AgentKind, CompilerException, Femto, Model, Output, Program, UpdateMode, WorldDimensions }
 import org.nlogo.agent.{ CompilationManagement, World, World2D, World3D }
 import org.nlogo.nvm.{ LabInterface, DefaultCompilerServices, PresentationCompilerInterface }
@@ -28,17 +28,32 @@ object HeadlessWorkspace {
   /**
    * Makes a new instance of NetLogo capable of running a model "headless", with no GUI.
    */
-  def newInstance: HeadlessWorkspace =
-    newInstance(classOf[HeadlessWorkspace])
+  @deprecated("Use HeadlessWorkspace.newInstance(Boolean) instead, specifying whether workspace is3D", "6.1.0")
+  def newInstance: HeadlessWorkspace = {
+    System.err.println("""|HeadlessWorkspace.newInstance(Class[_ <: HeadlessWorkspace]) is deprecated and may not reflect the 2D/3D state of the current model.
+                          |Query the model, world type, or dialect to determine whether NetLogo is 3D""".stripMargin)
+    newInstance(classOf[HeadlessWorkspace], Version.is3DInternal)
+
+  }
+
+  def newInstance(is3D: Boolean): HeadlessWorkspace =
+    newInstance(classOf[HeadlessWorkspace], is3D)
+
+  @deprecated("Use HeadlessWorkspace.newInstance(Class[_ <: HeadlessWorkspace], Boolean) instead, specifying whether workspace is3D", "6.1.0")
+  def newInstance(subclass: Class[_ <: HeadlessWorkspace]): HeadlessWorkspace = {
+    System.err.println("""|HeadlessWorkspace.newInstance(Class[_ <: HeadlessWorkspace]) is deprecated and may not reflect the 2D/3D state of the current model.
+                          |Query the model, world type, or dialect to determine whether NetLogo is 3D""".stripMargin)
+    newInstance(subclass, Version.is3DInternal)
+  }
 
   /**
    * If you derive your own subclass of HeadlessWorkspace, use this method to instantiate it.
    */
-  def newInstance(subclass: Class[_ <: HeadlessWorkspace]): HeadlessWorkspace = {
+  def newInstance(subclass: Class[_ <: HeadlessWorkspace], is3D: Boolean): HeadlessWorkspace = {
     val pico = new Pico
-    pico.addComponent(if (Version.is3D) classOf[World3D] else classOf[World2D])
+    pico.addComponent(if (is3D) classOf[World3D] else classOf[World2D])
     pico.add("org.nlogo.compile.Compiler")
-    if (Version.is3D)
+    if (is3D)
       pico.addScalaObject("org.nlogo.api.NetLogoThreeDDialect")
     else
       pico.addScalaObject("org.nlogo.api.NetLogoLegacyDialect")
@@ -50,10 +65,29 @@ object HeadlessWorkspace {
     pico.getComponent(subclass)
   }
 
-  def newLab: LabInterface = {
+  def fromPath(path: String): HeadlessWorkspace = {
+    fromPath(classOf[HeadlessWorkspace], path)
+  }
+
+  def fromPath(subclass: Class[_ <: HeadlessWorkspace], path: String): HeadlessWorkspace = {
+    val version = fileformat.modelVersionAtPath(path)
+    version.map { v =>
+      val i = newInstance(subclass, v.is3D)
+      try {
+        i.open(path)
+        i
+      } catch {
+        case e: Exception =>
+          i.dispose()
+          throw e
+      }
+    }.getOrElse(throw new Exception(s"The path $path contains no model file or an invalid model file"))
+  }
+
+  def newLab(is3D: Boolean): LabInterface = {
     val pico = new Pico
     pico.add("org.nlogo.compile.Compiler")
-    if (Version.is3D)
+    if (is3D)
       pico.addScalaObject("org.nlogo.api.NetLogoThreeDDialect")
     else
       pico.addScalaObject("org.nlogo.api.NetLogoLegacyDialect")
@@ -153,15 +187,15 @@ with org.nlogo.api.ViewSettings {
   /**
    * Internal use only.
    */
-  def initForTesting(worldSize: Int) {
-    initForTesting(worldSize, "")
+  def initForTesting(is3D: Boolean, worldSize: Int) {
+    initForTesting(is3D, worldSize, "")
   }
 
   /**
    * Internal use only.
    */
-  def initForTesting(worldSize: Int, modelString: String) {
-    if (Version.is3D)
+  def initForTesting(is3D: Boolean, worldSize: Int, modelString: String) {
+    if (is3D)
       initForTesting(new WorldDimensions3D(
           -worldSize, worldSize, -worldSize, worldSize, -worldSize, worldSize),
           modelString)
@@ -183,9 +217,11 @@ with org.nlogo.api.ViewSettings {
     world.turtleShapes.add(org.nlogo.shape.VectorShape.getDefaultShape)
     world.linkShapes.add(org.nlogo.shape.LinkShape.getDefaultLinkShape)
     world.createPatches(d)
-    val dialect =
-      if (Version.is3D) NetLogoThreeDDialect
-      else NetLogoLegacyDialect
+    // See comment in initForTesting(Int, String) above.
+    val dialect = d match {
+      case _: WorldDimensions3D => NetLogoThreeDDialect
+      case _ => NetLogoLegacyDialect
+    }
     val newProgram = Program.fromDialect(dialect)
     val results = compiler.compileProgram(source, newProgram,
       getExtensionManager, getCompilationEnvironment)
@@ -532,7 +568,8 @@ with org.nlogo.api.ViewSettings {
    * @param modelContents
    */
   override def openString(modelContents: String) {
-    openFromSource(modelContents, modelSuffix)
+    val suffix = fileformat.modelSuffix(modelContents)
+    openFromSource(modelContents, suffix.getOrElse(throw new Exception(s"Invalid model: $modelContents")))
   }
 
   /**

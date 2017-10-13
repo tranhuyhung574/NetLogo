@@ -140,7 +140,6 @@ class DummyWorkspace extends Workspace {
   override def inspectAgent(agentKind: org.nlogo.core.AgentKind, agent: Agent,radius: Double): Unit = unsupported
   override def stopInspectingAgent(agent: org.nlogo.agent.Agent): Unit = unsupported
   override def stopInspectingDeadAgents(): Unit = unsupported
-  override def procedures_=(procedures: org.nlogo.nvm.Procedure.ProceduresMap): Unit = unsupported
   override def behaviorSpaceExperimentName(name: String): Unit = unsupported
   override def behaviorSpaceExperimentName: String = unsupported
   override def getComponent[A <: AnyRef](componentClass: Class[A]): Option[A] = unsupported

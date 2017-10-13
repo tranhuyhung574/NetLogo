@@ -16,10 +16,10 @@ object ModelsLibrary {
 
   def modelsRoot: String = System.getProperty("netlogo.models.dir", "models")
 
-  def getModelPaths: Array[String] = getModelPaths(false)
+  def getModelPaths(version: Version): Array[String] = getModelPaths(version, false)
 
-  def getModelPaths(exclusive: Boolean): Array[String] = {
-    scanForModels(exclusive)
+  def getModelPaths(version: Version, exclusive: Boolean): Array[String] = {
+    scanForModels(version, exclusive)
     val fileSep = File.separator
     rootNode.map {
       _.depthFirstIterable.filter {
@@ -31,8 +31,8 @@ object ModelsLibrary {
     }.getOrElse(Array[String]())
   }
 
-  def getModelPathsAtRoot(path: String): Array[String] = {
-    val rnode = scanForModelsAtRoot(path, false)
+  def getModelPathsAtRoot(path: String, version: Version): Array[String] = {
+    val rnode = scanForModelsAtRoot(path, version, false)
     rnode.map {
       _.depthFirstIterable.collect {
         case Leaf(_, path) => path
@@ -40,8 +40,8 @@ object ModelsLibrary {
     }.getOrElse(Array[String]())
   }
 
-  def findModelsBySubstring(targetName: String): Seq[String] = {
-    scanForModels(false)
+  def findModelsBySubstring(targetName: String, version: Version): Seq[String] = {
+    scanForModels(version, false)
 
     def exactMatch(node: Node): Option[Seq[String]] =
       node.depthFirstIterable
@@ -79,8 +79,8 @@ object ModelsLibrary {
    *                   ".nlogo" extension.
    * @return the path to the model, or None if no such model is in the library.
    */
-  def getModelPath(targetName: String): Option[String] = {
-    scanForModels(false)
+  def getModelPath(targetName: String, version: Version): Option[String] = {
+    scanForModels(version, false)
     rootNode.flatMap {
       _.depthFirstIterable
         .find(n =>
@@ -91,15 +91,15 @@ object ModelsLibrary {
 
   def needsModelScan: Boolean = rootNode.isEmpty
 
-  def scanForModels(exclusive: Boolean): Unit = {
+  def scanForModels(version: Version, exclusive: Boolean): Unit = {
     if (! needsModelScan) {
       return
     }
     try {
       val directoryRoot =
-        if (!Version.is3D || !exclusive) new File(modelsRoot, "").getCanonicalFile
+        if (!version.is3D || !exclusive) new File(modelsRoot, "").getCanonicalFile
         else new File(modelsRoot, "3D").getCanonicalFile
-      rootNode = scanDirectory(directoryRoot.toPath, true, exclusive)
+      rootNode = scanDirectory(directoryRoot.toPath, true, version, exclusive)
     } catch {
       case e: java.io.IOException =>
         System.err.println("error: IOException canonicalizing models library path")
@@ -107,8 +107,8 @@ object ModelsLibrary {
     }
   }
 
-  def scanForModelsAtRoot(path: String, exclusive: Boolean): Option[Node] =
-    scanDirectory(new File(path, "").toPath, true, exclusive)
+  def scanForModelsAtRoot(path: String, version: Version, exclusive: Boolean): Option[Node] =
+    scanDirectory(new File(path, "").toPath, true, version, exclusive)
 
   def getImagePath(filePath: String): String = {
     val index = filePath.indexOf(".nlogo");
@@ -133,23 +133,23 @@ object ModelsLibrary {
     }
   }
 
-  private def scanDirectory(directory: Path, topLevel: Boolean, exclusive: Boolean): Option[Node] = {
+  private def scanDirectory(directory: Path, topLevel: Boolean, version: Version, exclusive: Boolean): Option[Node] = {
     if (! Files.isDirectory(directory) || Files.isSymbolicLink(directory)) {
       None
     }
 
     val ordering =
       if (topLevel)
-        new TopLevelOrdering(exclusive)
+        new TopLevelOrdering(version, exclusive)
       else
         NLogoModelOrdering
 
     val children =
       getChildPaths(directory).sortBy(_.getFileName.toString)(ordering)
-        .filterNot(p => isBadName(p.getFileName.toString))
+        .filterNot(p => isBadName(p.getFileName.toString, version))
         .flatMap { (p: Path) =>
         if (Files.isDirectory(p))
-          scanDirectory(p, false, exclusive)
+          scanDirectory(p, false, version, exclusive)
         else {
           val fileName = p.getFileName.toString.toUpperCase
           if (fileName.endsWith(".NLOGO") || fileName.endsWith(".NLOGO3D"))
@@ -193,16 +193,16 @@ object ModelsLibrary {
   }
 
   // This is only used at top-level, so we don't need to munge
-  private class TopLevelOrdering(exclusive: Boolean)
+  private class TopLevelOrdering(version: Version, exclusive: Boolean)
     extends scala.math.Ordering[String] {
       val orderedNames =
-        if (! Version.is3D)
+        if (! version.is3D)
           Seq(
             "SAMPLE MODELS", "CURRICULAR MODELS", "CODE EXAMPLES",
             "HUBNET ACTIVITIES", "IABM TEXTBOOK", "ALTERNATIVE VISUALIZATIONS")
-        else if (Version.is3D && exclusive)
+        else if (version.is3D && exclusive)
           Seq("3D")
-        else if (Version.is3D && ! exclusive)
+        else if (version.is3D && ! exclusive)
           Seq(
             "3D", "SAMPLE MODELS", "CURRICULAR MODELS", "CODE EXAMPLES",
             "HUBNET ACTIVITIES", "IABM TEXTBOOK", "ALTERNATIVE VISUALIZATIONS")
@@ -226,14 +226,14 @@ object ModelsLibrary {
       }
     }
 
-  private def isBadName(name: String): Boolean = {
+  private def isBadName(name: String, version: Version): Boolean = {
     // ignore invisible stuff
     name.startsWith(".") ||
     // ignore the directory containing the sample beats
     // for the Beatbox model
     name == "BEATS" ||
     // when we're not 3D ignore the 3D models.
-    (!Version.is3D &&
+    (!version.is3D &&
       (name == "3D" ||
         // the vrml extension is our only 3D extension at present
         // so just special case it - ST 6/12/08

@@ -19,8 +19,8 @@ object OpenModel {
     def invalidModel(uri: URI): Unit
     def invalidModelVersion(uri: URI, version: String): Unit
     def shouldOpenModelOfDifferingArity(arity: Int, version: String): Boolean
-    def shouldOpenModelOfUnknownVersion(version: String): Boolean
-    def shouldOpenModelOfLegacyVersion(version: String): Boolean
+    def shouldOpenModelOfUnknownVersion(currentVersion: String, openVersion: String): Boolean
+    def shouldOpenModelOfLegacyVersion(currentVersion: String, openVersion: String): Boolean
   }
 }
 
@@ -72,9 +72,9 @@ trait OpenModel[OpenParameter] {
     if (modelArityDiffers)
       ! controller.shouldOpenModelOfDifferingArity(modelArity, model.version)
     else if (! currentVersion.knownVersion(model.version))
-      ! controller.shouldOpenModelOfUnknownVersion(model.version)
+      ! controller.shouldOpenModelOfUnknownVersion(currentVersion.version, model.version)
     else if (! currentVersion.compatibleVersion(model.version))
-      ! controller.shouldOpenModelOfLegacyVersion(model.version)
+      ! controller.shouldOpenModelOfLegacyVersion(currentVersion.version, model.version)
     else
       false
   }
