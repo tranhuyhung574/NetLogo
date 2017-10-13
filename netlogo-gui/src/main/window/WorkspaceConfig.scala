@@ -6,7 +6,7 @@ import java.awt.{ Component, Frame }
 
 import org.nlogo.core.Femto
 import org.nlogo.api.{ ControlSet, SourceOwner }
-import org.nlogo.agent.World
+import org.nlogo.agent.{ CompilationManagement, World }
 import org.nlogo.nvm.{ JobManagerInterface, PresentationCompilerInterface }
 import org.nlogo.workspace.{ Evaluator, ExtensionManager, HubNetManagerFactory, JarLoader,
   LiveCompilerServices, ModelTracker, WorkspaceDependencies,
@@ -43,7 +43,7 @@ class WorkspaceConfig extends WorkspaceDependencies {
   var updateManager: UpdateManagerInterface = _
   var userInteraction: UserInteraction = _
   var viewManager: ViewManager = _
-  var world: World = _
+  var world: World with CompilationManagement = _
 
   private var compilerServicesSet = false
   private var evaluatorSet = false
@@ -192,7 +192,7 @@ class WorkspaceConfig extends WorkspaceDependencies {
     this
   }
 
-  def withWorld(w: World): WorkspaceConfig = {
+  def withWorld(w: World with CompilationManagement): WorkspaceConfig = {
     world = w
     withDefaultJobManager
   }

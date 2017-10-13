@@ -2,8 +2,10 @@
 
 package org.nlogo.lite
 
+import java.awt.Frame
+
 import org.nlogo.core.{ Model, Femto }
-import org.nlogo.agent.World
+import org.nlogo.agent.{ CompilationManagement, World }
 import org.nlogo.api.{ AggregateManagerInterface, ControlSet, NetLogoThreeDDialect, NetLogoLegacyDialect, RendererInterface, Version }
 import org.nlogo.nvm.PresentationCompilerInterface
 import org.nlogo.window.{ GUIJobManagerOwner, GUIWorkspace, GUIWorkspaceScala, NetLogoListenerManager, WorkspaceConfig }
@@ -17,7 +19,8 @@ object LiteWorkspace {
 
 class LiteWorkspace(config: WorkspaceConfig)
   extends GUIWorkspace(config) {
-  def this(world: World, frame: java.awt.Frame, listenerManager: NetLogoListenerManager, controlSet: ControlSet) =
+
+  def this(world: World with CompilationManagement, frame: Frame, listenerManager: NetLogoListenerManager, controlSet: ControlSet) =
     this(
       WorkspaceConfig
         .default
@@ -37,7 +40,7 @@ class LiteWorkspace(config: WorkspaceConfig)
       )
 
   @deprecated("LiteWorkspace can no longer be an actual applet, omit first two arguments", "6.1.0")
-  def this(appletPanel: AppletPanel, isApplet: Boolean, world: World, frame: java.awt.Frame, listenerManager: NetLogoListenerManager, controlSet: ControlSet) =
+  def this(appletPanel: AppletPanel, isApplet: Boolean, world: World with CompilationManagement, frame: java.awt.Frame, listenerManager: NetLogoListenerManager, controlSet: ControlSet) =
     this(world, frame, listenerManager, controlSet)
 
   val aggregateManager =

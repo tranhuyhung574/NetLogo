@@ -2,7 +2,7 @@
 
 package org.nlogo.app
 
-import javax.swing.{ JOptionPane, JMenu }
+import javax.swing.{ JFrame, JOptionPane, JMenu }
 import java.awt.event.ActionEvent
 
 import org.nlogo.agent.{ World2D, World3D }
@@ -23,6 +23,7 @@ import org.nlogo.shape.{ LinkShapesManagerInterface, ShapesManagerInterface, Tur
 import org.nlogo.util.{ NullAppHandler, Pico }
 import org.nlogo.window._
 import org.nlogo.window.Events._
+import org.nlogo.window.Event.LinkParent
 import org.nlogo.workspace.{ AbstractWorkspace, Controllable, CurrentModelOpener,
   HubNetManagerFactory, ModelTracker, ModelTrackerImpl, SaveModel, SaveModelAs, WorkspaceMessageCenter, WorkspaceFactory }
 
@@ -43,15 +44,17 @@ import scala.io.Codec
  */
 object App{
 
-  private val pico = new Pico()
+  private[app] val pico = new Pico()
   // all these guys are assigned in main. yuck
   var app: App = null
   var logger: Logger = null
-  private var commandLineModelIsLaunch = false
-  private var commandLineModel: String = null
-  private var commandLineMagic: String = null
-  private var commandLineURL: String = null
-  private var loggingName: String = null
+  // these are private[app] for refactoring purposes. Once the refactor is over they should
+  // be changed back (or just passed in, instead of being gross mutable state).
+  private[app] var commandLineModelIsLaunch = false
+  private[app] var commandLineModel: String = null
+  private[app] var commandLineMagic: String = null
+  private[app] var commandLineURL: String = null
+  private[app] var loggingName: String = null
 
   /**
    * Should be called once at startup to create the application and
@@ -77,11 +80,6 @@ object App{
     Logger.beQuiet()
     processCommandLineArguments(args)
     Splash.beginSplash() // also initializes AWT
-    pico.add("org.nlogo.compile.Compiler")
-    if (Version.is3D)
-      pico.addScalaObject("org.nlogo.api.NetLogoThreeDDialect")
-    else
-      pico.addScalaObject("org.nlogo.api.NetLogoLegacyDialect")
 
     if (Version.systemDynamicsAvailable) {
       pico.add("org.nlogo.sdm.gui.NLogoGuiSDMFormat")
@@ -131,7 +129,6 @@ object App{
     pico.addAdapter(new ModelConverterComponent())
 
     pico.addComponent(classOf[CodeToHtml])
-    pico.addComponent(classOf[App])
     pico.addComponent(classOf[ModelSaver])
     pico.add("org.nlogo.gl.view.ViewManager")
     // Anything that needs a parent Frame, we need to use ComponentParameter
@@ -182,7 +179,7 @@ object App{
     pico.add("org.nlogo.app.interfacetab.CommandCenter")
     pico.add("org.nlogo.app.interfacetab.InterfaceTab")
     pico.addComponent(classOf[Tabs])
-    app = pico.getComponent(classOf[App])
+    app = startConfiguredApp(Version.is3D)
     // It's pretty silly, but in order for the splash screen to show up
     // for more than a fraction of a second, we want to initialize as
     // much stuff as we can from main() before handing off to the event
@@ -264,9 +261,91 @@ object App{
       }
     }
   }
+
+  def startConfiguredApp(is3D: Boolean): App = {
+    val frame = new AppFrame()
+    val menuBarFactory = new StatefulMenuBarFactory()
+    pico.addComponent(menuBarFactory)
+    val config = configureWorkspace(frame, is3D)
+    new App(config, frame, menuBarFactory)
+  }
+
+  def configureWorkspace(frame: JFrame with LinkParent with LinkRoot, is3D: Boolean): WorkspaceConfig = {
+    val dialect =
+      if (is3D) Femto.scalaSingleton[Dialect]("org.nlogo.api.NetLogoThreeDDialect")
+      else      Femto.scalaSingleton[Dialect]("org.nlogo.api.NetLogoLegacyDialect")
+    val world =
+      if (is3D) new World3D()
+      else      new World2D()
+
+    val messageCenter = new WorkspaceMessageCenter()
+    val modelTracker = new ModelTrackerImpl(messageCenter)
+
+    val controlSet = new AppControlSet()
+    val listenerManager = new NetLogoListenerManager
+    val monitorManager = new AgentMonitorManager(frame)
+
+    // build the config
+    val workspaceConfig =
+      WorkspaceConfig
+        .default
+        .withControlSet(controlSet)
+        .withExternalFileManager(pico.getComponent(classOf[ExternalFileManager]))
+        .withFrame(frame)
+        .withHubNetManagerFactory(pico.getComponent(classOf[HubNetManagerFactory]))
+        .withKioskLevel(GUIWorkspace.KioskLevel.NONE)
+        .withLinkParent(frame)
+        .withListenerManager(listenerManager)
+        .withMessageCenter(messageCenter)
+        .withModelTracker(modelTracker)
+        .withMonitorManager(monitorManager)
+        .withCompiler(Femto.get[PresentationCompilerInterface]("org.nlogo.compile.Compiler", dialect))
+        .withUpdateManager(new UpdateManager(world.tickCounter))
+        .withWorld(world)
+        .tap(config => config.withViewManager(GUIWorkspaceScala.viewManager(config.displayStatusRef)))
+        .tap(config =>
+            config.withOwner(new GUIJobManagerOwner(config.updateManager, config.viewManager, config.displayStatusRef, config.world, config.frame)))
+
+    val colorizer = new EditorColorizer(workspaceConfig.compiler, workspaceConfig.extensionManager)
+
+    pico.addComponent(frame)
+    pico.addComponent(colorizer)
+    pico.addComponent(workspaceConfig.compilerServices)
+    pico.addComponent(new org.nlogo.properties.EditDialogFactory(workspaceConfig.compilerServices, colorizer))
+    val aggregateManager = pico.getComponent(classOf[AggregateManagerInterface])
+
+    workspaceConfig.withSourceOwner(aggregateManager)
+  }
+
 }
 
-class App extends
+// TODO: Move these out into their own file
+
+// This is for other windows to get their own copy of the menu
+// bar.  It's needed especially for OS X since the screen menu bar
+// doesn't get shared across windows.  -- AZS 6/17/2005
+trait MenuBarFactory extends org.nlogo.window.MenuBarFactory {
+  import org.nlogo.swing.UserAction, UserAction.{ ActionCategoryKey, EditCategory, FileCategory, HelpCategory, ToolsCategory }
+  def actions: Seq[javax.swing.Action]
+
+  def createMenu(newMenu: org.nlogo.swing.Menu, category: String): JMenu = {
+    actions.filter(_.getValue(ActionCategoryKey) == category).foreach(newMenu.offerAction)
+    newMenu
+  }
+
+  def createEditMenu:  JMenu = createMenu(new EditMenu,  EditCategory)
+  def createFileMenu:  JMenu = createMenu(new FileMenu,  FileCategory)
+  def createHelpMenu:  JMenu = createMenu(new HelpMenu,  HelpCategory)
+  def createToolsMenu: JMenu = createMenu(new ToolsMenu, ToolsCategory)
+  def createZoomMenu:  JMenu = new ZoomMenu
+}
+
+class StatefulMenuBarFactory extends MenuBarFactory {
+  var actions: Seq[javax.swing.Action] = Seq()
+}
+
+
+class App(config: WorkspaceConfig, val frame: JFrame with LinkParent with LinkRoot, private val menuBarFactory: StatefulMenuBarFactory) extends
     org.nlogo.window.Event.LinkChild with
     org.nlogo.api.Exceptions.Handler with
     AppEvent.Handler with
@@ -280,48 +359,34 @@ class App extends
     ZoomedEvent.Handler with
     Controllable {
 
-  import App.{pico, logger, commandLineMagic, commandLineModel, commandLineURL, commandLineModelIsLaunch, loggingName}
+  val listenerManager = config.listenerManager
+  val messageCenter = config.messageCenter
+  val modelTracker = config.modelTracker
+  val controlSet = config.controlSet
 
-  val frame = new AppFrame
+  import App.{ pico, logger, loggingName, commandLineModel, commandLineModelIsLaunch, commandLineMagic, commandLineURL }
 
   // all these guys get set in the locally block
-  private var _workspace: GUIWorkspace = null
-  def workspace = _workspace
+  protected var _workspace: GUIWorkspace = null
+  protected var _tabs: Tabs = null
+  def workspace: GUIWorkspace = _workspace
+  def tabs: Tabs = _tabs
   lazy val owner = new SimpleJobOwner("App", workspace.world.mainRNG, AgentKind.Observer)
-  private var _tabs: Tabs = null
-  def tabs = _tabs
   var menuBar: MenuBar = null
   var _fileManager: FileManager = null
-  var monitorManager:AgentMonitorManager = null
+  val monitorManager: MonitorManager = config.monitorManager
   var aggregateManager: AggregateManagerInterface = null
   var dirtyMonitor: DirtyMonitor = null
   var colorDialog: ColorDialog = null
   var labManager:LabManagerInterface = null
   var recentFilesMenu: RecentFilesMenu = null
-  private val listenerManager = new NetLogoListenerManager
   lazy val modelingCommons = pico.getComponent(classOf[ModelingCommonsInterface])
   private val ImportWorldURLProp = "netlogo.world_state_url"
   private val ImportRawWorldURLProp = "netlogo.raw_world_state_url"
 
   val isMac = System.getProperty("os.name").startsWith("Mac")
-
-  /**
-   * Quits NetLogo by exiting the JVM.  Asks user for confirmation first
-   * if they have unsaved changes. If the user confirms, calls System.exit(0).
-   */
-  // part of controlling API; used by e.g. the Mathematica-NetLogo link
-  // - ST 8/21/07
-  @throws(classOf[UserCancelException])
-  def quit(){ fileManager.quit() }
-
-  val messageCenter = new WorkspaceMessageCenter()
-  val modelTracker = new ModelTrackerImpl(messageCenter)
-
-  pico.addComponent(classOf[ModelTracker], modelTracker)
-
   locally {
     frame.addLinkComponent(this)
-    pico.addComponent(frame)
 
     org.nlogo.swing.Utils.setSystemLookAndFeel()
 
@@ -337,80 +402,65 @@ class App extends
           pico.getComponent(classOf[EditDialogFactoryInterface]))
       }
     }
-    pico.add(classOf[HubNetManagerFactory], "org.nlogo.hubnet.server.gui.HubNetManagerFactory",
-          Array[Parameter] (
-            new ComponentParameter(classOf[AppFrame]), new ComponentParameter(), new ComponentParameter()))
-    pico.addComponent(interfaceFactory)
-    pico.addComponent(new MenuBarFactory())
 
-    val world = if(Version.is3D) new World3D() else new World2D()
-
-    pico.addComponent(world)
-
-    val controlSet = new AppControlSet()
-
-    monitorManager = new AgentMonitorManager(frame)
     frame.addLinkComponent(monitorManager)
+
+    config.sourceOwners.foreach {
+      case a: AggregateManagerInterface => aggregateManager = a
+      case _ =>
+    }
+
+    pico.addComponent(classOf[ModelTracker], modelTracker)
+    pico.addComponent(interfaceFactory)
+    pico.addComponent(config.world)
+    pico.add(classOf[HubNetManagerFactory], "org.nlogo.hubnet.server.gui.HubNetManagerFactory",
+      Array[Parameter] (
+        new ComponentParameter(classOf[AppFrame]), new ComponentParameter(), new ComponentParameter()))
     pico.addComponent(classOf[AgentMonitorManager], monitorManager)
-
-    val workspaceConfig =
-      WorkspaceConfig
-        .default
-        .withCompiler(pico.getComponent(classOf[PresentationCompilerInterface]))
-        .withControlSet(controlSet)
-        .withExternalFileManager(pico.getComponent(classOf[ExternalFileManager]))
-        .withFrame(frame)
-        .withHubNetManagerFactory(pico.getComponent(classOf[HubNetManagerFactory]))
-        .withKioskLevel(GUIWorkspace.KioskLevel.NONE)
-        .withLinkParent(frame)
-        .withListenerManager(listenerManager)
-        .withMessageCenter(messageCenter)
-        .withModelTracker(modelTracker)
-        .withMonitorManager(monitorManager)
-        .withUpdateManager(new UpdateManager(world.tickCounter))
-        .withWorld(world)
-        .tap(config => config.withViewManager(GUIWorkspaceScala.viewManager(config.displayStatusRef)))
-        .tap(config =>
-            config.withOwner(new GUIJobManagerOwner(config.updateManager, config.viewManager, config.displayStatusRef, config.world, config.frame)))
-
     pico.add("org.nlogo.render.Renderer")
 
-    val colorizer = new EditorColorizer(workspaceConfig.compiler, workspaceConfig.extensionManager)
-
-    pico.addComponent(colorizer)
-    pico.addComponent(workspaceConfig.compilerServices)
-    pico.addComponent(new org.nlogo.properties.EditDialogFactory(workspaceConfig.compilerServices, colorizer))
-    aggregateManager = pico.getComponent(classOf[AggregateManagerInterface])
-
-    val configWithAggregate = workspaceConfig.withSourceOwner(aggregateManager)
-
-    _workspace = new GUIWorkspace(configWithAggregate) {
-      override def newRenderer: RendererInterface = pico.getComponent(classOf[RendererInterface])
+    _workspace = new GUIWorkspace(config) {
+      override def newRenderer: RendererInterface = {
+        val r = pico.getComponent(classOf[RendererInterface])
+        if (r == null) throw new RuntimeException("Invalid Renderer!")
+        r
+      }
     }
 
     pico.addComponent(_workspace)
 
     frame.addLinkComponent(workspace)
-
     frame.addLinkComponent(new ExtensionAssistant(frame))
 
     _tabs = pico.getComponent(classOf[Tabs])
-    controlSet.tabs = Some(_tabs)
+
+    config.controlSet match {
+      case a: AppControlSet => a.tabs = Some(_tabs)
+      case _ =>
+    }
 
     pico.addComponent(tabs.interfaceTab.getInterfacePanel)
     frame.getContentPane.add(tabs, java.awt.BorderLayout.CENTER)
-
-    frame.addLinkComponent(new CompilerManager(workspace, world, tabs.codeTab, Seq(aggregateManager)))
+    frame.addLinkComponent(new CompilerManager(workspace, config.world, tabs.codeTab, Option(aggregateManager).toSeq))
     frame.addLinkComponent(listenerManager)
 
     org.nlogo.api.Exceptions.setHandler(this)
+    pico.addComponent(this)
 
     if(loggingName != null)
-     startLogging(loggingName)
-
+      startLogging(loggingName)
   }
 
-  private def finishStartup(appHandler: Object) {
+  /**
+   * Quits NetLogo by exiting the JVM.  Asks user for confirmation first
+   * if they have unsaved changes. If the user confirms, calls System.exit(0).
+   */
+  // part of controlling API; used by e.g. the Mathematica-NetLogo link
+  // - ST 8/21/07
+  @throws(classOf[UserCancelException])
+  def quit(){ fileManager.quit() }
+
+  private[app] def finishStartup(appHandler: Object) {
     val app = pico.getComponent(classOf[App])
     val currentModelAsString = {() =>
       val modelSaver = pico.getComponent(classOf[ModelSaver])
@@ -485,6 +535,7 @@ class App extends
     if(isMac){
       appHandler.getClass.getDeclaredMethod("ready", classOf[AnyRef]).invoke(appHandler, this)
     }
+    menuBarFactory.actions = allActions ++ tabs.permanentMenuActions
   }
 
   def startLogging(properties:String) {
@@ -501,25 +552,6 @@ class App extends
     }
     else JOptionPane.showConfirmDialog(null, I18N.gui.getN("tools.loggingMode.fileDoesNotExist", properties),
       "NetLogo", JOptionPane.DEFAULT_OPTION)
-  }
-
-  // This is for other windows to get their own copy of the menu
-  // bar.  It's needed especially for OS X since the screen menu bar
-  // doesn't get shared across windows.  -- AZS 6/17/2005
-  private class MenuBarFactory extends org.nlogo.window.MenuBarFactory {
-    import org.nlogo.swing.UserAction, UserAction.{ ActionCategoryKey, EditCategory, FileCategory, HelpCategory, ToolsCategory }
-    def actions = allActions ++ tabs.permanentMenuActions
-
-    def createMenu(newMenu: org.nlogo.swing.Menu, category: String): JMenu = {
-      actions.filter(_.getValue(ActionCategoryKey) == category).foreach(newMenu.offerAction)
-      newMenu
-    }
-
-    def createEditMenu:  JMenu = createMenu(new EditMenu,  EditCategory)
-    def createFileMenu:  JMenu = createMenu(new FileMenu,  FileCategory)
-    def createHelpMenu:  JMenu = createMenu(new HelpMenu,  HelpCategory)
-    def createToolsMenu: JMenu = createMenu(new ToolsMenu, ToolsCategory)
-    def createZoomMenu:  JMenu = new ZoomMenu
   }
 
   ///
@@ -624,12 +656,12 @@ class App extends
         pico.getComponent(classOf[PreviewCommandsEditorInterface]),
         workspace,
         () => pico.getComponent(classOf[ModelSaver]).asInstanceOf[ModelSaver].currentModel),
-      new SaveModelingCommonsAction(modelingCommons, menuBar.fileMenu),
+      new SaveModelingCommonsAction(modelingCommons, frame),
       FindDialog.FIND_ACTION,
       FindDialog.FIND_NEXT_ACTION
     ) ++
     HelpActions.apply ++
-    FileActions(workspace, menuBar.fileMenu) ++
+    FileActions(workspace, frame) ++
     workspaceActions ++
     labManager.actions ++
     fileManager.actions
@@ -652,7 +684,7 @@ class App extends
     if (manager != _fileManager) {
       _fileManager = manager
       frame.addLinkComponent(manager)
-      recentFilesMenu = new RecentFilesMenu(frame, manager)
+      recentFilesMenu = new RecentFilesMenu(manager)
       frame.addLinkComponent(recentFilesMenu)
     }
   }
@@ -1068,8 +1100,7 @@ class App extends
   def makeWidget(text:String) {
     dispatchThreadOrBust(
       tabs.interfaceTab.getInterfacePanel.loadWidget(
-        WidgetReader.read(text.lines.toList, workspace.compilerServices,
-          fileformat.nlogoReaders(Version.is3D))))
+        WidgetReader.read(text.lines.toList, workspace.compilerServices, fileformat.nlogoReaders(Version.is3D))))
   }
 
   /// helpers for controlling methods
@@ -1144,7 +1175,7 @@ class App extends
   }
 
   /// AppFrame
-  def getLinkParent: AppFrame = frame // for Event.LinkChild
+  def getLinkParent: JFrame with LinkParent with LinkRoot = frame // for Event.LinkChild
 
   private def dispatchThreadOrBust[T](f: => T) = {
     org.nlogo.awt.EventQueue.mustBeEventDispatchThread()

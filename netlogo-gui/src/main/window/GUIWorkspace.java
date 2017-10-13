@@ -202,13 +202,6 @@ public abstract strictfp class GUIWorkspace // can't be both abstract and strict
     new Events.TickStateChangeEvent(true).raiseLater(this);
   }
 
-  /*
-  @Override
-  public Procedure compileForRun(String source, org.nlogo.nvm.Context context, boolean reporter) throws CompilerException {
-    return super.compileForRun(source, context, reporter);
-  }
-  */
-
   @Override
   public void clearTicks() {
     super.clearTicks();
