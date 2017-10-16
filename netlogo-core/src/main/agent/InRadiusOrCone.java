@@ -99,7 +99,7 @@ public strictfp class InRadiusOrCone
       cachedIDs = new HashSet<Long>(0);
     }
 
-    ArrayList<Tuple2<Object, Object>> regions = world.topology().getRegion((int) StrictMath.floor(startX), (int) StrictMath.floor(startY), (int) StrictMath.ceil(radius));
+    ArrayList<Tuple2<Object, Object>> regions = world.topology().getRegion(startX, startY, radius);
 //    System.out.println(regions);
 //    Patch patches[] = new Patch[world.patches().count()];
     if (this.patches == null || this.patches.length < world.patches().count()) {
