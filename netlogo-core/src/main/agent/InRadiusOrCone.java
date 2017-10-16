@@ -16,6 +16,7 @@ import java.util.HashSet;
 public strictfp class InRadiusOrCone
   implements World.InRadiusOrCone {
   private final World2D world;
+  private Patch patches[] = null;
 
   InRadiusOrCone(World2D world) {
     this.world = world;
@@ -28,12 +29,12 @@ public strictfp class InRadiusOrCone
 
   public List<Agent> inRadius(Agent agent, AgentSet sourceSet,
                               double radius, boolean wrap) {
-    int worldWidth = world.worldWidth();
-    int worldHeight = world.worldHeight();
-    int maxPxcor = world.maxPxcor();
-    int maxPycor = world.maxPycor();
-    int minPxcor = world.minPxcor();
-    int minPycor = world.minPycor();
+//    int worldWidth = world.worldWidth();
+//    int worldHeight = world.worldHeight();
+//    int maxPxcor = world.maxPxcor();
+//    int maxPycor = world.maxPycor();
+//    int minPxcor = world.minPxcor();
+//    int minPycor = world.minPycor();
 
     List<Agent> result = new ArrayList<Agent>();
     Patch startPatch;
@@ -50,42 +51,42 @@ public strictfp class InRadiusOrCone
       startY = startPatch.pycor;
     }
 
-    int dxmin = 0;
-    int dxmax = 0;
-    int dymin = 0;
-    int dymax = 0;
-
-    int r = (int) StrictMath.ceil(radius);
-
-    if (world.wrappingAllowedInX()) {
-      double width = worldWidth / 2.0;
-      if (r < width) {
-        dxmax = r;
-        dxmin = -r;
-      } else {
-        dxmax = (int) StrictMath.floor(width);
-        dxmin = -(int) StrictMath.ceil(width - 1);
-      }
-    } else {
-      int xdiff = minPxcor - startPatch.pxcor;
-      dxmin = StrictMath.abs(xdiff) < r ? xdiff : -r;
-      dxmax = StrictMath.min((maxPxcor - startPatch.pxcor), r);
-    }
-    if (world.wrappingAllowedInY()) {
-      double height = worldHeight / 2.0;
-      if (r < height) {
-        dymax = r;
-        dymin = -r;
-      } else {
-        dymax = (int) StrictMath.floor(height);
-        dymin = -(int) StrictMath.ceil(height - 1);
-      }
-    } else {
-      int ydiff = minPycor - startPatch.pycor;
-      dymin = StrictMath.abs(ydiff) < r ? ydiff : -r;
-      dymax = StrictMath.min((maxPycor - startPatch.pycor), r);
-    }
-
+//    int dxmin = 0;
+//    int dxmax = 0;
+//    int dymin = 0;
+//    int dymax = 0;
+//
+//    int r = (int) StrictMath.ceil(radius);
+//
+//    if (world.wrappingAllowedInX()) {
+//      double width = worldWidth / 2.0;
+//      if (r < width) {
+//        dxmax = r;
+//        dxmin = -r;
+//      } else {
+//        dxmax = (int) StrictMath.floor(width);
+//        dxmin = -(int) StrictMath.ceil(width - 1);
+//      }
+//    } else {
+//      int xdiff = minPxcor - startPatch.pxcor;
+//      dxmin = StrictMath.abs(xdiff) < r ? xdiff : -r;
+//      dxmax = StrictMath.min((maxPxcor - startPatch.pxcor), r);
+//    }
+//    if (world.wrappingAllowedInY()) {
+//      double height = worldHeight / 2.0;
+//      if (r < height) {
+//        dymax = r;
+//        dymin = -r;
+//      } else {
+//        dymax = (int) StrictMath.floor(height);
+//        dymin = -(int) StrictMath.ceil(height - 1);
+//      }
+//    } else {
+//      int ydiff = minPycor - startPatch.pycor;
+//      dymin = StrictMath.abs(ydiff) < r ? ydiff : -r;
+//      dymax = StrictMath.min((maxPycor - startPatch.pycor), r);
+//    }
+//
     HashSet<Long> cachedIDs = null;
     if (! sourceSet.isBreedSet()) {
       cachedIDs = new HashSet<Long>(sourceSet.count());
@@ -98,9 +99,12 @@ public strictfp class InRadiusOrCone
       cachedIDs = new HashSet<Long>(0);
     }
 
-    ArrayList<Tuple2<Object, Object>> regions = world.topology().getRegion((int) StrictMath.floor(startX), (int) StrictMath.floor(startY), (int) StrictMath.ceil(radius) + 1);
+    ArrayList<Tuple2<Object, Object>> regions = world.topology().getRegion((int) StrictMath.floor(startX), (int) StrictMath.floor(startY), (int) StrictMath.ceil(radius));
 //    System.out.println(regions);
-    Patch patches[] = new Patch[world.patches().count()];
+//    Patch patches[] = new Patch[world.patches().count()];
+    if (this.patches == null || this.patches.length < world.patches().count()) {
+      this.patches = new Patch[world.patches().count()];
+    }
     Agent worldPatches[] = ((ArrayAgentSet) world.patches()).array();
 //    System.out.println(Arrays.toString(worldPatches));
     int curr = 0;
@@ -120,8 +124,8 @@ public strictfp class InRadiusOrCone
         Patch patch = patches[i];
 
         if (sourceSet.kind() == AgentKindJ.Patch()) {
-          if (world.protractor().distance(patch.pxcor, patch.pycor, startX, startY, wrap) <= radius &&
-              (sourceSet == world.patches() || cachedIDs.contains(new Long(patch.id())))) {
+          if ((sourceSet == world.patches() || cachedIDs.contains(new Long(patch.id()))) &&
+            world.protractor().distance(patch.pxcor, patch.pycor, startX, startY, wrap) <= radius) {
             result.add(patch);
           }
         } else if (sourceSet.kind() == AgentKindJ.Turtle()) {

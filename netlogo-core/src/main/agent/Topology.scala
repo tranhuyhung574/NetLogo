@@ -78,7 +78,6 @@ extends Neighbors {
   // Topology.getPatchNorth, then source.pycor gets redundantly tested again.
   // - JD, ST 6/3/04
 
-  // TODO keep track of number of patches
   def getRegion(X: Int, Y: Int, r: Int): ArrayList[(Int, Int)] = {
     val w = world.worldWidth
     val h = world.worldHeight
@@ -92,12 +91,19 @@ extends Neighbors {
     val ans: ArrayList[(Int, Int)] = new ArrayList()
     var (start, end, xx, yy) = (-1, -1, -1, -1)
 
-    for (i <- 0 until h * w) {
+    val lxx = (x + r) % w
+    val gxx = w - r + x
+    val lyy = (y + r) % h
+    val gyy = h - r + y
+
+    var i = 0
+    val max = h * w
+    while (i < max) {
       xx = i % w
       yy = i / w
 
-      if ((Math.abs(x - xx) <= r || (xWraps && ((xx <= (x + r) % w) || (xx >= w - r + x)))) &&
-        (Math.abs(y - yy) <= r || (yWraps && ((yy <= (y + r) % h) || (yy >= h - r + y))))) {
+      if ((Math.abs(x - xx) <= r || (xWraps && ((xx <= lxx) || (xx >= gxx)))) &&
+        (Math.abs(y - yy) <= r || (yWraps && ((yy <= lyy) || (yy >= gyy))))) {
         if (start == -1) {
           start = i
           end = i + 1
@@ -111,6 +117,7 @@ extends Neighbors {
         start = -1
         end = -1
       }
+      i += 1
     }
 
     if (start != -1) {
