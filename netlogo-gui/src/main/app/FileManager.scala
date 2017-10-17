@@ -81,11 +81,18 @@ object FileManager {
     rank        = 3
     accelerator = UserAction.KeyBindings.keystroke('M', withMenu = true)
 
+    var modelsLibraryDialog: Option[ModelsLibraryDialog] = None
+
     @throws(classOf[UserCancelException])
     override def action(): Unit = {
       manager.aboutToCloseFiles()
-      ModelsLibraryDialog.open(frame, modelSaver.currentVersion,
-      { sourceURI => manager.openFromURI(sourceURI, ModelType.Library) })
+      if (modelsLibraryDialog.isEmpty) {
+        modelsLibraryDialog = ModelsLibraryDialog.create(frame, modelSaver.currentVersion)
+      }
+      modelsLibraryDialog.foreach { dialog =>
+        dialog.setVisible(true)
+        dialog.sourceURI.foreach { uri => manager.openFromURI(uri, ModelType.Library) }
+      }
     }
   }
 
@@ -229,7 +236,6 @@ object FileManager {
       }
     }
   }
-
 }
 
 import FileManager._

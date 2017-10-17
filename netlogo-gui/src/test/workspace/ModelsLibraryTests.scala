@@ -10,10 +10,10 @@ import org.scalatest.FunSuite
 
 class ModelsLibraryTests extends FunSuite {
   test("needsModelScan returns true when a scan needs to be performed") {
-    ModelsLibrary.rootNode = None
-    assert(ModelsLibrary.needsModelScan)
+    ModelsLibrary.rootNodes = Map()
+    assert(ModelsLibrary.needsModelScan(TwoDVersion))
     ModelsLibrary.getModelPaths(TwoDVersion)
-    assert(! ModelsLibrary.needsModelScan)
+    assert(! ModelsLibrary.needsModelScan(TwoDVersion))
   }
   test("getModelPathsAtRoot returns a list of all model paths in the given directory") {
     assert(ModelsLibrary.getModelPathsAtRoot(ExtensionManager.extensionPath, TwoDVersion).length > 10)
@@ -44,7 +44,7 @@ class ModelsLibraryTests extends FunSuite {
   }
   test("after indexing, rootNode contains a tree describing all the models") {
     ModelsLibrary.getModelPaths(TwoDVersion, true)
-    assert(ModelsLibrary.rootNode.nonEmpty)
-    assert(ModelsLibrary.rootNode.get.depthFirstIterable.size > 500)
+    assert(ModelsLibrary.rootNodes.get(TwoDVersion).nonEmpty)
+    assert(ModelsLibrary.rootNodes(TwoDVersion).depthFirstIterable.size > 500)
   }
 }

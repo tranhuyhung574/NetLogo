@@ -225,6 +225,14 @@ public abstract strictfp class GUIWorkspace // can't be both abstract and strict
   @Override
   public void dispose() throws InterruptedException {
     periodicUpdater.stop();
+
+    // These two lines clear any pending periodic updates. Otherwise, when
+    // we go to dispose the workspace, we may find it `wait`ing on world,
+    // and since the GUIWorkspace is being shut down, nothing will ever call `notify`
+    // on world. RG 10/31/17
+    setPeriodicUpdatesEnabled(false);
+    jobManager().interrupt();
+
     repaintTimer.stop();
     lifeguard.interrupt();
     lifeguard.join();

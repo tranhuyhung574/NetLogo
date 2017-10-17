@@ -28,11 +28,10 @@ class ModelSaver(model: ModelSections, loader: ModelLoader) {
   }
 
   def currentVersion: Version =
-    if (Version.is3D(currentModel.version)) ThreeDVersion
+    if (Version.is3D(model.version)) ThreeDVersion
     else TwoDVersion
 
-  def currentModelInCurrentVersion: Model =
-    currentModel.copy(version = Version.version)
+  def currentModelInCurrentVersion: Model = currentModel
 
   def setCurrentModel(m: Model) = {
     _currentModel = m

@@ -12,7 +12,7 @@ import scala.annotation.tailrec
 import scala.math.Ordering
 
 object ModelsLibrary {
-  var rootNode: Option[Node] = None
+  var rootNodes: Map[Version, Node] = Map()
 
   def modelsRoot: String = System.getProperty("netlogo.models.dir", "models")
 
@@ -21,7 +21,7 @@ object ModelsLibrary {
   def getModelPaths(version: Version, exclusive: Boolean): Array[String] = {
     scanForModels(version, exclusive)
     val fileSep = File.separator
-    rootNode.map {
+    rootNodes.get(version).map {
       _.depthFirstIterable.filter {
         case Leaf(name, path) => ! path.contains(s"${fileSep}models${fileSep}test${fileSep}")
         case _ => false
@@ -66,7 +66,7 @@ object ModelsLibrary {
     def partialMatch(node: Node): Seq[String] =
       (initialMatch(node) ++ anywhereMatch(node)).distinct
 
-    rootNode.map { node =>
+    rootNodes.get(version).map { node =>
       exactMatch(node) getOrElse partialMatch(node)
     }.getOrElse(Seq[String]())
   }
@@ -81,7 +81,7 @@ object ModelsLibrary {
    */
   def getModelPath(targetName: String, version: Version): Option[String] = {
     scanForModels(version, false)
-    rootNode.flatMap {
+    rootNodes.get(version).flatMap {
       _.depthFirstIterable
         .find(n =>
             n.path.toUpperCase.split(File.separator(0)).last.startsWith(s"${targetName.toUpperCase}"))
@@ -89,17 +89,19 @@ object ModelsLibrary {
     }
   }
 
-  def needsModelScan: Boolean = rootNode.isEmpty
+  def needsModelScan(version: Version): Boolean = ! rootNodes.isDefinedAt(version)
 
   def scanForModels(version: Version, exclusive: Boolean): Unit = {
-    if (! needsModelScan) {
+    if (! needsModelScan(version)) {
       return
     }
     try {
       val directoryRoot =
         if (!version.is3D || !exclusive) new File(modelsRoot, "").getCanonicalFile
         else new File(modelsRoot, "3D").getCanonicalFile
-      rootNode = scanDirectory(directoryRoot.toPath, true, version, exclusive)
+      scanDirectory(directoryRoot.toPath, true, version, exclusive).foreach { dir =>
+        rootNodes = rootNodes + (version -> dir)
+      }
     } catch {
       case e: java.io.IOException =>
         System.err.println("error: IOException canonicalizing models library path")

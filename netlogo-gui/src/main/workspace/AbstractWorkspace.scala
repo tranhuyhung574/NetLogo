@@ -182,7 +182,7 @@ abstract class AbstractWorkspace(private val deps: WorkspaceDependencies)
       def profilingEnabled: Boolean = AbstractWorkspace.this.profilingEnabled
       def resolvePath(path: String): String = {
         try {
-          val modelPath = Option(AbstractWorkspace.this.getModelPath)
+          val modelPath = Option(modelTracker.getModelPath)
             .flatMap(s => Try(Paths.get(s)).toOption)
           FileIO.resolvePath(path, modelPath).map(_.normalize.toString).getOrElse(path)
         } catch {
