@@ -101,10 +101,7 @@ public strictfp class InRadiusOrCone
 
     ArrayList<Tuple2<Object, Object>> regions = world.topology().getRegion(startX, startY, radius);
 //    System.out.println(regions);
-//    Patch patches[] = new Patch[world.patches().count()];
-    if (this.patches == null || this.patches.length < world.patches().count()) {
-      this.patches = new Patch[world.patches().count()];
-    }
+    Patch patches[] = new Patch[world.patches().count()];
     Agent worldPatches[] = ((ArrayAgentSet) world.patches()).array();
 //    System.out.println(Arrays.toString(worldPatches));
     int curr = 0;
@@ -121,8 +118,8 @@ public strictfp class InRadiusOrCone
         Patch patch = patches[i];
 
         if (sourceSet.kind() == AgentKindJ.Patch()) {
-          if ((sourceSet == world.patches() || cachedIDs.contains(new Long(patch.id()))) &&
-            world.protractor().distance(patch.pxcor, patch.pycor, startX, startY, wrap) <= radius) {
+          if (world.protractor().distance(patch.pxcor, patch.pycor, startX, startY, wrap) <= radius &&
+              (sourceSet == world.patches() || cachedIDs.contains(new Long(patch.id())))) {
             result.add(patch);
           }
         } else if (sourceSet.kind() == AgentKindJ.Turtle()) {

@@ -78,6 +78,7 @@ extends Neighbors {
   // Topology.getPatchNorth, then source.pycor gets redundantly tested again.
   // - JD, ST 6/3/04
 
+<<<<<<< HEAD
   def getRegion(X: Double, Y: Double, R: Double): ArrayList[(Int, Int)] = {
     val w = world.worldWidth
     val h = world.worldHeight
@@ -103,6 +104,28 @@ extends Neighbors {
 
       if ((Math.abs(x - xx) <= r || (xWraps && ((xx <= lxx) || (xx >= gxx)))) &&
         (Math.abs(y - yy) <= r || (yWraps && ((yy <= lyy) || (yy >= gyy))))) {
+=======
+  // TODO keep track of number of patches
+  def getRegion(X: Int, Y: Int, r: Int): ArrayList[(Int, Int)] = {
+    val w = world.worldWidth
+    val h = world.worldHeight
+
+    // orient x and y to world position.
+//    println("X: " + X + "\nY: " + Y + "\nw: " + w + "\nh: " + h + "\nr: " + r)
+//    println("min x: " + world.minPxcor + "\nmax x: " + world.maxPxcor + "\nmin y: " + world.minPycor + "\nmax y: " + world.maxPycor)
+    val x = X - world.minPxcor
+    val y = h - 1 - (Y - world.minPycor)
+//    println("x: " + x + "\ny: " + y)
+    val ans: ArrayList[(Int, Int)] = new ArrayList()
+    var (start, end, xx, yy) = (-1, -1, -1, -1)
+
+    for (i <- 0 until h * w) {
+      xx = i % w
+      yy = i / w
+
+      if ((Math.abs(x - xx) <= r || (xWraps && ((xx <= (x + r) % w) || (xx >= w - r + x)))) &&
+        (Math.abs(y - yy) <= r || (yWraps && ((yy <= (y + r) % h) || (yy >= h - r + y))))) {
+>>>>>>> a4abc5927620f8004be2e718a713d63090449f77
         if (start == -1) {
           start = i
           end = i + 1
@@ -116,7 +139,10 @@ extends Neighbors {
         start = -1
         end = -1
       }
+<<<<<<< HEAD
       i += 1
+=======
+>>>>>>> a4abc5927620f8004be2e718a713d63090449f77
     }
 
     if (start != -1) {
