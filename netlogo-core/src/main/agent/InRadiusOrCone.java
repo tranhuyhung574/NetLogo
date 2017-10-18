@@ -84,9 +84,9 @@ public strictfp class InRadiusOrCone
 //    } else {
 //      int ydiff = minPycor - startPatch.pycor;
 //      dymin = StrictMath.abs(ydiff) < r ? ydiff : -r;
-//      dymax = StrictMath.min((maxPycor - startPatch.pycor), r);
 //    }
-//
+//      dymax = StrictMath.min((maxPycor - startPatch.pycor), r);
+
     HashSet<Long> cachedIDs = null;
     if (! sourceSet.isBreedSet()) {
       cachedIDs = new HashSet<Long>(sourceSet.count());
@@ -110,7 +110,17 @@ public strictfp class InRadiusOrCone
       int r1 = (int)region._1();
       int r2 = (int)region._2();
       length = r2 - r1;
+//      if (length > 5) {
       System.arraycopy(worldPatches, r1, patches, curr, length);
+
+//      } else {
+//        int i = 0;
+//        while (i < length) {
+//          patches[curr + i] = (Patch) worldPatches[r1 + i];
+//          i++;
+//        }
+//      }
+
       curr += length;
     }
 

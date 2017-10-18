@@ -16,20 +16,23 @@ class GetRegionTests extends FunSuite {
 
   def testGetRegion(x: Int, y: Int, r: Int, w: Int, h: Int, xWraps: Boolean, yWraps: Boolean) = {
     val world = new World2D
-    val ww: Int =
-      if (w % 2 == 0) {
-        w / 2 - 1
-      } else {
-        w / 2
-      }
-    val hh: Int =
-      if (h % 2 == 0) {
-        h / 2 - 1
-      } else {
-        h / 2
-      }
-    world.createPatches(- w / 2, ww, - h / 2, hh)
+//    val ww: Int =
+//      if (w % 2 == 0) {
+//        w / 2 - 1
+//      } else {
+//        w / 2
+//      }
+//    val hh: Int =
+//      if (h % 2 == 0) {
+//        h / 2 - 1
+//      } else {
+//        h / 2
+//      }
+//    world.createPatches(- w / 2, ww, - h / 2, hh)
+    world.createPatches(0, w - 1, 0, h - 1)
+
     assert(world.worldWidth == w)
+    assert(world.worldHeight == h)
     world.changeTopology(xWraps, yWraps)
     world.topology.getRegion(x, y, r)
   }
@@ -40,9 +43,9 @@ class GetRegionTests extends FunSuite {
     assertResult(toArrayList(List((0, 9)))) (testGetRegion(2, 1, 2, 3, 3, false, false))
     assertResult(toArrayList(List(
       (2, 6), (8, 12), (14, 18), (20, 24), (26, 30)
-    ))) (testGetRegion(4, 2, 2, 6, 6, false, false))
+    ))) (testGetRegion(4, 3, 2, 6, 6, false, false))
 
-    assertResult(toArrayList(List((1, 3), (4, 6)))) (testGetRegion(2, 1, 1, 3, 2, false, false))
+    assertResult(toArrayList(List((1, 3), (4, 6)))) (testGetRegion(2, 0, 1, 3, 2, false, false))
 
     assertResult(toArrayList(List(
       (3,7)
@@ -52,7 +55,7 @@ class GetRegionTests extends FunSuite {
   test("testGetRegion with x wrap") {
     assertResult(toArrayList(List(
       (0,1), (2, 7), (8, 13), (14, 19), (20, 25), (26, 30)
-    ))) (testGetRegion(4, 2, 2, 6, 6, true, false))
+    ))) (testGetRegion(4, 3, 2, 6, 6, true, false))
 
     assertResult(toArrayList(List(
       (0,1), (3,7)
@@ -60,7 +63,7 @@ class GetRegionTests extends FunSuite {
 
     assertResult(toArrayList(List(
       (3,7)
-    ))) (testGetRegion(0, 5, 2, 1, 7, true, false))
+    ))) (testGetRegion(0, 1, 2, 1, 7, true, false))
 
     assertResult(toArrayList(List(
       (0,4), (6,7)
@@ -70,11 +73,11 @@ class GetRegionTests extends FunSuite {
   test("getRegion with y wrap") {
     assertResult(toArrayList(List(
       (0,1), (3,7)
-    ))) (testGetRegion(0, 5, 2, 1, 7, false, true))
+    ))) (testGetRegion(0, 1, 2, 1, 7, false, true))
 
     assertResult(toArrayList(List(
       (0,4), (6,7)
-    ))) (testGetRegion(0, 1, 2, 1, 7, false, true))
+    ))) (testGetRegion(0, 5, 2, 1, 7, false, true))
 
     assertResult(toArrayList(List(
       (0,4)
@@ -87,8 +90,8 @@ class GetRegionTests extends FunSuite {
 
     assertResult(toArrayList(List(
       (0,1), (2, 7), (8, 13), (14, 19), (20, 25), (26, 30)
-    ))) (testGetRegion(4, 2, 2, 6, 6, true, true))
+    ))) (testGetRegion(4, 3, 2, 6, 6, true, true))
 
-    assertResult(toArrayList(List((0, 6)))) (testGetRegion(2, 1, 1, 3, 2, true, true))
+    assertResult(toArrayList(List((0, 6)))) (testGetRegion(2, 0, 1, 3, 2, true, true))
   }
 }

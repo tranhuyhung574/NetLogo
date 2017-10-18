@@ -86,7 +86,47 @@ extends Neighbors {
     val y: Int = h - 1 - (Y.toInt - world.minPycor)
     val r: Int = if (X.toInt != X || Y.toInt != Y) R.toInt + 1 else R.toInt
 
-    
+//    var dxmin = 0
+//    var dxmax = 0
+//    var dymin = 0
+//    var dymax = 0
+//
+//    if (world.wrappingAllowedInX) {
+//      val width = w / 2.0
+//      if (r < width) {
+//        dxmax = r
+//        dxmin = -r
+//      }
+//      else {
+//        dxmax = StrictMath.floor(width).toInt
+//        dxmin = -StrictMath.ceil(width - 1).toInt
+//      }
+//    }
+//    else {
+//      val xdiff = world.minPxcor - x
+//      dxmin = if (StrictMath.abs(xdiff) < r) xdiff
+//      else -r
+//      dxmax = StrictMath.min(world.maxPxcor - x, r)
+//    }
+//    if (world.wrappingAllowedInY) {
+//      val height = h / 2.0
+//      if (r < height) {
+//        dymax = r
+//        dymin = -r
+//      }
+//      else {
+//        dymax = StrictMath.floor(height).toInt
+//        dymin = -StrictMath.ceil(height - 1).toInt
+//      }
+//    }
+//    else {
+//      val ydiff = world.minPycor - y
+//      dymin = if (StrictMath.abs(ydiff) < r) ydiff
+//      else -r
+//    }
+//    dymax = StrictMath.min(world.maxPycor - y, r)
+
+
     val ans: ArrayList[(Int, Int)] = new ArrayList()
     var (start, end, xx, yy) = (-1, -1, -1, -1)
 
@@ -116,6 +156,8 @@ extends Neighbors {
         start = -1
         end = -1
       }
+
+
       i += 1
     }
 
