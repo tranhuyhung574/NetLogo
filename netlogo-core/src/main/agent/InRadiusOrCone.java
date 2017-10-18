@@ -118,9 +118,6 @@ public strictfp class InRadiusOrCone
     }
 
     for (int i = 0; i < curr; i++) {
-//      for (int dx = dxmin; dx <= dxmax; dx++) {
-
-//        try {
         Patch patch = patches[i];
 
         if (sourceSet.kind() == AgentKindJ.Patch()) {
