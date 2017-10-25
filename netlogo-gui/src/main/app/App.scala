@@ -13,8 +13,7 @@ import org.nlogo.app.common.{ CodeToHtml, Events => AppEvents, FileActions, Find
 import org.nlogo.app.interfacetab.{ InterfaceToolBar, WidgetPanel }
 import org.nlogo.app.tools.{ AgentMonitorManager, GraphicsPreview, Preferences, PreferencesDialog, PreviewCommandsEditor }
 import org.nlogo.awt.UserCancelException
-import org.nlogo.core.{ AgentKind, CompilerException, Dialect, Femto, I18N,
-Shape, Widget => CoreWidget }, Shape.{ LinkShape, VectorShape }
+import org.nlogo.core.{ AgentKind, CompilerException, Dialect, Femto, I18N }
 import org.nlogo.fileformat, fileformat.ScalaXmlElementFactory
 import org.nlogo.log.Logger
 import org.nlogo.nvm.PresentationCompilerInterface
@@ -176,7 +175,6 @@ object App {
     pico.addAdapter(new Adapters.ModelConverterComponent())
 
     pico.addComponent(classOf[CodeToHtml])
-    pico.addComponent(classOf[ModelSaver])
     pico.add("org.nlogo.gl.view.ViewManager")
     if (is3D) {
       pico.add("org.nlogo.gl.view.ThreeDGLViewFactory")
@@ -285,6 +283,7 @@ object App {
     pico.addComponent(colorizer)
     pico.addComponent(workspaceConfig.compilerServices)
     pico.addComponent(new org.nlogo.properties.EditDialogFactory(workspaceConfig.compilerServices, colorizer))
+
     val aggregateManager = pico.getComponent(classOf[AggregateManagerInterface])
 
     workspaceConfig.withSourceOwner(aggregateManager)
@@ -299,8 +298,8 @@ AppEvent.Handler with
 BeforeLoadEvent.Handler with
 LoadBeginEvent.Handler with
 LoadEndEvent.Handler with
+LoadModelEvent.Handler with
 ModelSavedEvent.Handler with
-ModelSections with
 AppEvents.SwitchedTabsEvent.Handler with
 AboutToQuitEvent.Handler with
 ZoomedEvent.Handler with
@@ -332,7 +331,6 @@ Controllable {
   var menuBar: MenuBar = null
   var recentFilesMenu: RecentFilesMenu = null
   var params: CommandLineParameters = null
-  private var modelSaver: ModelSaver = _
   private var _fileManager: FileManager = null
   private var _workspace: GUIWorkspace = null
   private var _tabs: Tabs = null
@@ -347,6 +345,7 @@ Controllable {
     else TwoDVersion.version
 
   locally {
+
     frame.addLinkComponent(this)
 
     org.nlogo.swing.Utils.setSystemLookAndFeel()
@@ -354,15 +353,6 @@ Controllable {
     Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
       def uncaughtException(t: Thread, e: Throwable) { org.nlogo.api.Exceptions.handle(e) }
     })
-
-    val interfaceFactory = new InterfaceFactory() {
-      def widgetPanel(workspace: GUIWorkspace): AbstractWidgetPanel =
-        new WidgetPanel(workspace)
-      def toolbar(wp: AbstractWidgetPanel, workspace: GUIWorkspace, buttons: List[WidgetInfo], frame: Frame) = {
-        new InterfaceToolBar(wp.asInstanceOf[WidgetPanel], workspace, buttons, frame,
-          pico.getComponent(classOf[EditDialogFactoryInterface]))
-      }
-    }
 
     frame.addLinkComponent(monitorManager)
 
@@ -372,7 +362,6 @@ Controllable {
     }
 
     pico.addComponent(classOf[ModelTracker], modelTracker)
-    pico.addComponent(interfaceFactory)
     pico.addComponent(config.world)
     pico.addComponent(classOf[AgentMonitorManager], monitorManager)
     pico.add("org.nlogo.render.Renderer")
@@ -413,6 +402,14 @@ Controllable {
     pico.addComponent(this)
   }
 
+  private val shapeChangeListener =
+    new ShapeChangeListener(workspace, workspace.world)
+  // we have this only to prevent scalac from yelling at us
+  require(shapeChangeListener != null)
+
+  private val modelLoader =
+    pico.getComponent(classOf[ModelLoader])
+
   /**
    * Quits NetLogo by exiting the JVM.  Asks user for confirmation first
    * if they have unsaved changes. If the user confirms, calls System.exit(0).
@@ -436,11 +433,9 @@ Controllable {
     }
     val app = pico.getComponent(classOf[App])
     val currentModelAsString = {() =>
-      val modelSaver = pico.getComponent(classOf[ModelSaver])
-      val is3D = Version.is3D(modelSaver.currentModel.version)
-      modelSaver.modelAsString(modelSaver.currentModel, ModelReader.modelSuffix(is3D))
+      val is3D = modelTracker.currentVersion.is3D
+      modelLoader.sourceString(modelTracker.model, ModelReader.modelSuffix(is3D))
     }
-    modelSaver = pico.getComponent(classOf[ModelSaver])
     pico.add(classOf[ModelingCommonsInterface],
           "org.nlogo.mc.ModelingCommons",
           Array[Parameter] (
@@ -458,8 +453,7 @@ Controllable {
 
     val titler = (file: Option[String]) => file map externalFileTitle getOrElse modelTitle
     pico.add(classOf[DirtyMonitor], "org.nlogo.app.DirtyMonitor",
-      new ComponentParameter, new ComponentParameter, new ComponentParameter, new ComponentParameter,
-      new ConstantParameter(titler))
+      new ComponentParameter, new ComponentParameter, new ComponentParameter, new ConstantParameter(titler))
     dirtyMonitor = pico.getComponent(classOf[DirtyMonitor])
     frame.addLinkComponent(dirtyMonitor)
 
@@ -469,8 +463,7 @@ Controllable {
       "org.nlogo.app.FileManager",
       new ComponentParameter(),
       new ConstantParameter(modelTracker),
-      new ComponentParameter(), new ComponentParameter(),
-      new ComponentParameter(), new ComponentParameter(),
+      new ComponentParameter(), new ComponentParameter(), new ComponentParameter(),
       new ConstantParameter(menuBar), new ConstantParameter(menuBar),
       new ConstantParameter(currentVersion))
     setFileManager(pico.getComponent(classOf[FileManager]))
@@ -565,31 +558,22 @@ Controllable {
 
   lazy val openColorDialog = new OpenColorDialog(frame)
 
+  private var switchAction: SwitchArityAction =
+    new SwitchArityAction(! modelTracker.currentVersion.is3D, this)
+
+  def handle(e: LoadModelEvent): Unit = {
+    val to3D = ! Version.is3D(e.model.version)
+    if (to3D != switchAction.to3D) {
+      menuBar.revokeAction(switchAction)
+      switchAction = new SwitchArityAction(to3D, this)
+      menuBar.offerAction(switchAction)
+    }
+  }
+
   lazy val allActions: Seq[javax.swing.Action] = {
     val osSpecificActions = if (isMac) Seq() else Seq(openPreferencesDialog, openAboutDialog)
 
     val workspaceActions = org.nlogo.window.WorkspaceActions(workspace)
-
-    val (switchName, switchedArity) =
-      if (modelSaver.currentVersion.is3D) ("Switch to 2D", false)
-      else ("Switch to 3D", true)
-
-    val switchAction = {
-      import javax.swing.AbstractAction
-      import java.awt.event.ActionEvent
-      import org.nlogo.swing.UserAction, UserAction.MenuAction
-      new AbstractAction(switchName) with MenuAction {
-        category    = UserAction.FileCategory
-
-        override def actionPerformed(e: ActionEvent): Unit = {
-          try {
-            App.this.switchArity(switchedArity)
-          } catch {
-            case ex: UserCancelException => Exceptions.ignore(ex)
-          }
-        }
-      }
-    }
 
     val generalActions    = Seq[javax.swing.Action](
       switchAction,
@@ -602,7 +586,7 @@ Controllable {
       new PreviewCommandsEditor.EditPreviewCommands(
         pico.getComponent(classOf[PreviewCommandsEditorInterface]),
         workspace,
-        () => pico.getComponent(classOf[ModelSaver]).asInstanceOf[ModelSaver].currentModel),
+        () => modelTracker.model),
       new SaveModelingCommonsAction(modelingCommons, frame),
       FindDialog.FIND_ACTION,
       FindDialog.FIND_NEXT_ACTION
@@ -691,7 +675,7 @@ Controllable {
   }
 
   private def magicOpen(name: String) {
-    val matches = org.nlogo.workspace.ModelsLibrary.findModelsBySubstring(name, modelSaver.currentVersion)
+    val matches = org.nlogo.workspace.ModelsLibrary.findModelsBySubstring(name, modelTracker.currentVersion)
     if (matches.isEmpty) commandLater("print \"no models matching \\\"" + name + "\\\" found\"")
     else {
       val fullName =
@@ -702,7 +686,7 @@ Controllable {
           if (i != -1) matches(i) else null
         }
       if (fullName != null) {
-        org.nlogo.workspace.ModelsLibrary.getModelPath(fullName, modelSaver.currentVersion).foreach { path =>
+        org.nlogo.workspace.ModelsLibrary.getModelPath(fullName, modelTracker.currentVersion).foreach { path =>
           val source = org.nlogo.api.FileIO.fileToString(path)(Codec.UTF8)
           org.nlogo.awt.EventQueue.invokeLater(() => openFromSource(source, path, ModelType.Library))
         }
@@ -736,8 +720,15 @@ Controllable {
     workspace.modelSaved(e.modelPath)
     org.nlogo.window.RuntimeErrorDialog.setModelName(workspace.modelNameForDisplay)
     frame.setTitle(modelTitle)
-    workspace.hubNetManager.foreach { manager =>
-      manager.setTitle(modelTracker.modelNameForDisplay, modelTracker.getModelDir, modelTracker.getModelType)
+    // the code below is classic feature envy on workspace.  It's worth looking
+    // for opportunities to move this out of App and into Workspace
+    if (workspace.hubNetInitialized) {
+      workspace.hubNetManager.foreach { manager =>
+        manager.setTitle(
+          modelTracker.modelNameForDisplay,
+          modelTracker.getModelDir,
+          modelTracker.getModelType)
+      }
     }
   }
 
@@ -748,7 +739,6 @@ Controllable {
     val modelName = workspace.modelNameForDisplay
     RuntimeErrorDialog.setModelName(modelName)
     frame.setTitle(modelTitle)
-    workspace.hubNetManager.foreach(_.closeClientEditor())
   }
 
   private var wasAtPreferredSizeBeforeLoadBegan = false
@@ -881,7 +871,7 @@ Controllable {
    */
   @throws(classOf[java.io.IOException])
   private[nlogo] def saveOpenModel(controller: SaveModel.Controller): Unit = {
-    SaveModelAs(pico.getComponent(classOf[ModelSaver]).currentModel,
+    SaveModelAs(modelTracker.model,
       pico.getComponent(classOf[ModelLoader]),
       controller,
       modelTracker,
@@ -1136,25 +1126,5 @@ Controllable {
   private def dispatchThreadOrBust[T](f: => T) = {
     org.nlogo.awt.EventQueue.mustBeEventDispatchThread()
     f
-  }
-
-  def procedureSource:  String =
-    tabs.codeTab.innerSource
-  def widgets:          Seq[CoreWidget] = {
-    tabs.interfaceTab.iP.getWidgetsForSaving
-  }
-  def info:             String =
-    tabs.infoTab.info
-  def turtleShapes:     Seq[VectorShape] =
-    tabs.workspace.world.turtleShapeList.shapes.collect { case s: VectorShape => s }
-  def linkShapes:       Seq[LinkShape] =
-    tabs.workspace.world.linkShapeList.shapes.collect { case s: LinkShape => s }
-  def additionalSections: Seq[ModelSections.ModelSaveable] = {
-    val sections =
-      Seq[ModelSections.ModelSaveable](tabs.workspace.previewCommands,
-        labManager,
-        aggregateManager,
-        _workspace)
-    workspace.hubNetManager.map(_ +: sections).getOrElse(sections)
   }
 }

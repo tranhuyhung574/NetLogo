@@ -1,5 +1,5 @@
 // (C) Uri Wilensky. https://github.com/NetLogo/NetLogo
-//
+
 package org.nlogo.workspace
 
 import org.nlogo.core.{ CompilerException, ErrorSource, ExtensionObject, Primitive, PrimitiveCommand, PrimitiveReporter, TokenType }
@@ -144,6 +144,7 @@ class ExtensionManager(
   def processWorkspaceEvent(evt: WorkspaceEvent): Unit = {
     evt match {
       case ToggleCompilerTesting(isOn) => testingMode = isOn
+      case SwitchModel(_, _) => reset()
       case _ =>
     }
   }

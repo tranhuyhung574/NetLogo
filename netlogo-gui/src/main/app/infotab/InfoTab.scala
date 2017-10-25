@@ -186,7 +186,10 @@ class InfoTab(attachModelDir: String => String, dialect: Dialect)
   def changedUpdate(e: DocumentEvent) { changed() }
   def insertUpdate(e: DocumentEvent) { changed() }
   def removeUpdate(e: DocumentEvent) { changed() }
-  private def changed() { new org.nlogo.window.Events.DirtyEvent(None).raise(this) }
+  private def changed() {
+    new org.nlogo.window.Events.DirtyEvent(None).raise(this)
+    new org.nlogo.window.Events.UpdateModelEvent(m => m.copy(info = InfoTab.this.info)).raise(this)
+  }
 
   /// Printing
   def print(g: Graphics, pageFormat: PageFormat, pageIndex: Int, printer: PrinterManager) = {

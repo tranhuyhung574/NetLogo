@@ -4,14 +4,17 @@ package org.nlogo.nvm
 
 import org.nlogo.core.{ AgentKind, DummyCompilationEnvironment }
 import org.nlogo.agent.{Agent, AgentSet, World2D}
-import org.nlogo.api.{ JobOwner, CommandRunnable,
+import org.nlogo.api.{ JobOwner, CommandRunnable, NetLogoLegacyDialect,
   ReporterRunnable, ImportErrorHandler, OutputDestination}
 import org.nlogo.core.WorldDimensions
 import scala.collection.immutable.ListMap
 
 class DummyWorkspace extends Workspace {
   private def unsupported = throw new UnsupportedOperationException
+
   val world = new World2D()
+
+  def dialect = NetLogoLegacyDialect
   override def procedures: ListMap[String,Procedure] = ListMap.empty[String, Procedure]
   override def joinForeverButtons(agent: Agent) = unsupported
   override def addJobFromJobThread(job: Job) = unsupported
@@ -132,7 +135,7 @@ class DummyWorkspace extends Workspace {
 
   // Members declared in org.nlogo.core.LiteralParser
   def readFromString(s: String): AnyRef = unsupported
-  def readNumberFromString(source: String): AnyRef = unsupported
+  def readNumberFromString(source: String): java.lang.Double = unsupported
 
   // Members declared in org.nlogo.nvm.Workspace
   override def breathe(context: org.nlogo.nvm.Context): Unit = unsupported
@@ -146,4 +149,15 @@ class DummyWorkspace extends Workspace {
   override def requestDisplayUpdate(force: Boolean): Unit = unsupported
   override def disablePeriodicRendering(): Unit = unsupported
   override def enablePeriodicRendering(): Unit = unsupported
+
+  // deprecated members from CompilerServices
+  def checkCommandSyntax(source: String): Unit = unsupported
+  def checkReporterSyntax(source: String): Unit = unsupported
+  def findProcedurePositions(source: String): Map[String,org.nlogo.core.ProcedureSyntax] = unsupported
+  def getTokenAtPosition(source: String,position: Int): org.nlogo.core.Token = unsupported
+  def isConstant(s: String): Boolean = unsupported
+  def isReporter(s: String): Boolean = unsupported
+  def isValidIdentifier(s: String): Boolean = unsupported
+  def tokenizeForColorization(source: String): Array[org.nlogo.core.Token] = unsupported
+  def tokenizeForColorizationIterator(source: String): Iterator[org.nlogo.core.Token] = unsupported
 }

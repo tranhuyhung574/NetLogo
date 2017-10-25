@@ -9,6 +9,7 @@ import
 import
   ModelSections._
 
+@deprecated("ModelSections should no longer be used", "6.1.0")
 private[nlogo] trait ModelSections {
   def procedureSource:    String
   def widgets:            Seq[Widget]

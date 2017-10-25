@@ -8,7 +8,7 @@ import java.nio.file.Paths
 import java.net.URI
 import javax.swing.{ AbstractAction, JButton, JComponent, JDialog }
 
-import org.nlogo.api.{ ModelType, ThreeDVersion, TwoDVersion, Version }
+import org.nlogo.api.{ ModelReader, ModelType, ThreeDVersion, TwoDVersion, Version }
 import org.nlogo.awt.{ EventQueue, UserCancelException }
 import org.nlogo.core.{ I18N, Model }
 import org.nlogo.fileformat.{ ConversionError, ConversionWithErrors, ErroredConversion, FailedConversionResult }
@@ -67,7 +67,7 @@ class BackgroundFileController(dialog: JDialog, foregroundController: FileContro
 }
 
 class FileController(owner: Component, modelTracker: ModelTracker) extends OpenModelController with SaveModelController {
-  private def modelSuffix = modelTracker.getModelFileName.split("\\.").last
+  private def modelSuffix = ModelReader.modelSuffix(modelTracker.currentVersion.is3D)
 
   // OpenModel.Controller methods
   def errorOpeningURI(uri: URI, exception: Exception): Unit = {

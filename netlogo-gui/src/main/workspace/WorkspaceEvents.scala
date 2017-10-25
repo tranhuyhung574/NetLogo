@@ -2,8 +2,8 @@
 
 package org.nlogo.workspace
 
-import org.nlogo.core.{ CompilerException, Program }
-import org.nlogo.api.JobOwner
+import org.nlogo.core.{ CompilerException, Model, Program }
+import org.nlogo.api.{ JobOwner, ModelType }
 import org.nlogo.nvm.{ Context, Instruction }
 
 import scala.reflect.ClassTag
@@ -19,6 +19,8 @@ case class WarningMessage(text: String) extends WorkspaceEvent
 case class RuntimeError(owner: JobOwner, context: Context, instruction: Instruction, exception: Exception) extends WorkspaceEvent
 case class AddInstrumentation[A : ClassTag](name: String, instrument: A, classTag: ClassTag[A]) extends WorkspaceEvent
 case class RemoveInstrumentation[A : ClassTag](name: String, classTag: ClassTag[A]) extends WorkspaceEvent
+case class SwitchModel(modelPath: Option[String], modelType: ModelType) extends WorkspaceEvent
+case class LoadModel(model: Model) extends WorkspaceEvent
 
 trait WorkspaceMessageListener extends Subscriber[WorkspaceEvent, WorkspaceMessageCenter#Pub] {
   def processWorkspaceEvent(evt: WorkspaceEvent): Unit

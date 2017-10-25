@@ -47,7 +47,11 @@ window.RemoveConstraint - String varname
 window.RemoveJob - org.nlogo.api.JobOwner owner
 window.RuntimeError - org.nlogo.api.JobOwner jobOwner - org.nlogo.api.SourceOwner sourceOwner - int pos - int length
 window.TickStateChange - boolean tickCounterInitialized
+window.UpdateModel - java.util.function.Function<org.nlogo.core.Model,org.nlogo.core.Model> updateFunction
 window.WidgetAdded - Object widget
+# WidgetAltered indicates that a widget has changed in a way that requires updating the model.
+# Such a change may or may not require recompilation, which is primarily what WidgetEdited signals.
+window.WidgetAltered - Widget widget
 window.WidgetEdited - Widget widget
 window.WidgetForegrounded - Widget widget
 window.WidgetRemoved - Widget widget

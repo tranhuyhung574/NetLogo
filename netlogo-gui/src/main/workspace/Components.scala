@@ -11,6 +11,13 @@ class ComponentPair[A <: AnyRef](
     component = lifecycle.flatMap(_.create())
   }
 
+  def isInitialized[B](ofKlass: Class[B]): Boolean = {
+    if (klass == ofKlass)
+      component.nonEmpty
+    else
+      false
+  }
+
   def fetch(): Option[A] = {
     component orElse {
       init()
@@ -52,6 +59,10 @@ trait Components {
 
   def getComponent[A <: AnyRef](componentClass: Class[A]): Option[A] = {
     componentPairs.flatMap(_.fetchClass(componentClass)).headOption
+  }
+
+  def isComponentInitialized[A <: AnyRef](componentClass: Class[A]): Boolean = {
+    componentPairs.exists(_.isInitialized(componentClass))
   }
 
   @throws(classOf[InterruptedException])

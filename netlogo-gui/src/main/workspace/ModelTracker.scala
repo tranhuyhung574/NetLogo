@@ -6,7 +6,8 @@ import java.io.{ File, IOException }
 import java.net.URI
 import java.nio.file.Paths
 
-import org.nlogo.api.{ FileIO, ModelType }
+import org.nlogo.api.{ FileIO, ModelType, ThreeDVersion, TwoDVersion, Version }
+import org.nlogo.core.Model
 import org.nlogo.nvm.{ ModelTracker => NvmModelTracker }
 
 import scala.util.Try
@@ -17,12 +18,12 @@ import scala.util.Try
  *   - the model path
  *   - the model file name
  *   - the model type (new, library, "normal")
+ *   - the working copy of the model itself
  *
- *  At some point in the future this trait *could* be
- *  modified to hold the model itself.
- *  At the moment, that bit of state is handled by ModelSaver,
- *  but only because nothing in the workspace needs it directly.
- *  RG 5/12/16
+ *  The workspace doesn't make use of the working copy of the model,
+ *  but it's nice to have available to clients of the workspace.
+ *
+ *  RG 5/12/16, 10/31/17
  */
 trait ModelTracker extends NvmModelTracker {
   /**
@@ -42,6 +43,12 @@ trait ModelTracker extends NvmModelTracker {
   var _modelFileName: String = null
 
   /**
+   * Representation of the active model.
+   */
+  private var _model: Model = Model()
+  def model: Model = _model
+
+  /**
    * type of the currently loaded model. Certain aspects of NetLogo's
    * behavior depend on this, i.e. whether to force a save-as and so on.
    */
@@ -51,6 +58,10 @@ trait ModelTracker extends NvmModelTracker {
   def setModelType(tpe: ModelType): Unit = {
     _modelType = tpe
   }
+
+  def currentVersion: Version =
+    if (Version.is3D(model.version)) ThreeDVersion
+    else TwoDVersion
 
   /**
    * instantly converts the current model to ModelTypeJ.NORMAL. This is used
@@ -160,6 +171,19 @@ trait ModelTracker extends NvmModelTracker {
         else            modelName
 
       s"${baseName} ${defaultName}"
+    }
+  }
+
+  def updateModel(f: Model => Model): Unit = {
+    _model = f(_model)
+  }
+
+  def processWorkspaceEvent(e: WorkspaceEvent): Unit = {
+    e match {
+      case SwitchModel(modelPath, modelTpe) =>
+        setModelPath(modelPath.orNull)
+        setModelType(modelTpe)
+      case _ =>
     }
   }
 }

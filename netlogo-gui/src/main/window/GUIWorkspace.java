@@ -38,6 +38,7 @@ import org.nlogo.nvm.DisplayStatus;
 import org.nlogo.nvm.JobManagerOwner;
 import org.nlogo.nvm.Procedure;
 import org.nlogo.nvm.Workspace;
+import org.nlogo.workspace.SwitchModel;
 import org.nlogo.workspace.ModelCompiledFailure;
 import org.nlogo.workspace.ModelCompiledSuccess;
 
@@ -61,8 +62,7 @@ public abstract strictfp class GUIWorkspace // can't be both abstract and strict
     org.nlogo.window.Events.AddChooserConstraintEvent.Handler,
     org.nlogo.window.Events.AddInputBoxConstraintEvent.Handler,
     org.nlogo.window.Events.CompiledEvent.Handler,
-    org.nlogo.api.DrawingInterface,
-    org.nlogo.api.ModelSections.ModelSaveable {
+    org.nlogo.api.DrawingInterface {
 
   public enum KioskLevel {NONE, MODERATE}
 
@@ -847,26 +847,11 @@ public abstract strictfp class GUIWorkspace // can't be both abstract and strict
    */
   public void handle(org.nlogo.window.Events.BeforeLoadEvent e) {
     setPeriodicUpdatesEnabled(false);
-    if (e.modelPath.isDefined()) {
-      setModelPath(e.modelPath.get());
-    } else {
-      setModelPath(null);
-    }
-    modelTracker().setModelType(e.modelType);
-    if (hubNetManager().isDefined()) {
-      hubNetManager().get().disconnect();
-    }
-    jobManager().haltSecondary();
-    jobManager().haltPrimary();
-    getExtensionManager().reset();
-    fileManager().handleModelChange();
-    previewCommands_$eq(PreviewCommands$.MODULE$.DEFAULT());
+    messageCenter().send(new SwitchModel(e.modelPath, e.modelType));
     clearDrawing();
     viewManager().resetMouseCors();
     enableDisplayUpdates();
-    setProcedures(new scala.collection.immutable.ListMap<String, Procedure>());
     lastTicksListenersHeard = -1.0;
-    plotManager().forgetAll();
   }
 
   /**

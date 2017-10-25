@@ -23,7 +23,7 @@ object DirtyMonitor {
   }
 }
 
-class DirtyMonitor(frame: JFrame, modelSaver: ModelSaver, modelLoader: ModelLoader, modelTracker: ModelTracker, title: Option[String] => String)
+class DirtyMonitor(frame: JFrame, modelLoader: ModelLoader, modelTracker: ModelTracker, title: Option[String] => String)
 extends BeforeLoadEvent.Handler
 with AfterLoadEvent.Handler
 with WidgetAddedEvent.Handler
@@ -58,7 +58,7 @@ with SaveModel.Controller
     baseSaveName + ModelReader.modelSuffix(is3D)
 
   def handle(e: AboutToQuitEvent) {
-    new java.io.File(autoSaveFileName(Version.is3D(modelSaver.currentModel.version))).delete()
+    new java.io.File(autoSaveFileName(modelTracker.currentVersion.is3D)).delete()
     Exceptions.ignoring(classOf[IOException]) {
       priorTempFile.foreach(Files.deleteIfExists)
     }
@@ -72,7 +72,7 @@ with SaveModel.Controller
       return
     try {
       lastTimeAutoSaved = System.currentTimeMillis()
-      SaveModel(modelSaver.currentModel, modelLoader, this, TempFileModelTracker, Version).foreach { f =>
+      SaveModel(modelTracker.model, modelLoader, this, TempFileModelTracker, Version).foreach { f =>
         f().foreach { savedUri =>
           if (System.getProperty("os.name").startsWith("Windows")) {
             Files.setAttribute(Paths.get(savedUri), "dos:hidden", true)
@@ -140,7 +140,7 @@ with SaveModel.Controller
 
   // chooseFilePath is used when the file doesn't yet have a path
   def chooseFilePath(modelType: ModelType): Option[URI] =
-    Some(Paths.get(autoSaveFileName(Version.is3D(modelSaver.currentModel.version))).toUri)
+    Some(Paths.get(autoSaveFileName(modelTracker.currentVersion.is3D)).toUri)
 
   def shouldSaveModelOfDifferingVersion(currentVersion: Version, saveVersion: String): Boolean = true
   def warnInvalidFileFormat(format: String): Unit = {}

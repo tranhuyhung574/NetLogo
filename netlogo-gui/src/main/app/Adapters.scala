@@ -56,14 +56,10 @@ object Adapters {
     }
   }
 
-  // we need to make HeadlessWorkspace objects for BehaviorSpace to use.
-  // HeadlessWorkspace uses picocontainer too, but it could get confusing
-  // to use the same container in both places, so I'm going to keep the
-  // containers separate and just use Plain Old Java Reflection to
-  // call HeadlessWorkspace's newInstance() method. - ST 3/11/09
+  // We need to make HeadlessWorkspace objects for BehaviorSpace to use. - ST 3/11/09
   // And we'll conveniently reuse it for the preview commands editor! - NP 2015-11-18
-  class AppWorkspaceFactory(modelTracker: ModelTracker, modelSaver: ModelSaver) extends WorkspaceFactory() with CurrentModelOpener {
-    def currentVersion: Version = modelSaver.currentVersion
+  class AppWorkspaceFactory(modelTracker: ModelTracker) extends WorkspaceFactory() with CurrentModelOpener {
+    def currentVersion: Version = modelTracker.currentVersion
     def newInstance(is3D: Boolean): AbstractWorkspace =
       Class.forName("org.nlogo.headless.HeadlessWorkspace")
         .getMethod("newInstance")
@@ -71,7 +67,7 @@ object Adapters {
         .asInstanceOf[AbstractWorkspace]
     def openCurrentModelIn(w: Workspace): Unit = {
       w.setModelPath(modelTracker.getModelPath)
-      w.openModel(modelSaver.currentModelInCurrentVersion)
+      w.openModel(modelTracker.model)
     }
   }
 
@@ -80,9 +76,8 @@ object Adapters {
     def verify(container: PicoContainer): Unit = {}
 
     def getComponentInstance(container: PicoContainer, into: JType) = {
-      val modelSaver = container.getComponent(classOf[ModelSaver])
       val modelTracker = container.getComponent(classOf[ModelTracker])
-      new AppWorkspaceFactory(modelTracker, modelSaver)
+      new AppWorkspaceFactory(modelTracker)
     }
   }
 }

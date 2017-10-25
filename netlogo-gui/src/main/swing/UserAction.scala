@@ -2,7 +2,7 @@
 
 package org.nlogo.swing
 
-import java.awt.Toolkit
+import java.awt.{ Component, Toolkit }
 import java.awt.event.InputEvent
 import javax.swing.{ Action, KeyStroke }
 
@@ -17,6 +17,8 @@ object UserAction {
    * Lower ranks are listed before higher ranks. Actions missing this key are assumed to have
    * the highest rank. */
   val ActionRankKey        = "org.nlogo.swing.ActionRankKey"
+  /* Key for an action to have a registered component from which to raise events */
+  val ActionComponentKey   = "org.nlogo.swing.ActionComponentKey"
 
   val FileCategory  = "org.nlogo.swing.FileCategory"
   val EditCategory  = "org.nlogo.swing.EditCategory"
@@ -82,6 +84,13 @@ object UserAction {
 
     def accelerator_=(k: KeyStroke): Unit = {
       putValue(Action.ACCELERATOR_KEY, k)
+    }
+
+    def component: Option[Component] = {
+      getValue(ActionComponentKey) match {
+        case c: Component => Some(c)
+        case _ => None
+      }
     }
 
     def category: Option[String] =

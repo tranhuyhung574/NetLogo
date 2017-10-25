@@ -65,6 +65,7 @@ private[workspace] final class DefaultFileManager(
     evt match {
       case m: ModelPathChanged =>
         m.modelDirName.foreach(dirName => setPrefix(dirName))
+      case SwitchModel(_, _) => handleModelChange()
       case _ =>
     }
   }

@@ -6,7 +6,7 @@ import org.nlogo.api.{ LogoThunkFactory, MersenneTwisterFast, PlotInterface }
 import org.nlogo.plot.PlotManager
 import org.nlogo.nvm.Context
 
-trait Plotting extends { this: LogoThunkFactory =>
+trait Plotting extends WorkspaceMessageListener { this: LogoThunkFactory =>
   def evaluator: Evaluator
 
   val plotRNG = new MersenneTwisterFast()
@@ -33,4 +33,11 @@ trait Plotting extends { this: LogoThunkFactory =>
     evaluator.withContext(c){ plotManager.setupPlots() }
   }
 
+  abstract override def processWorkspaceEvent(e: WorkspaceEvent): Unit = {
+    e match {
+      case SwitchModel(_, _) =>
+        plotManager.forgetAll()
+      case _ =>
+    }
+  }
 }
