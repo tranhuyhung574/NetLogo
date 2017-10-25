@@ -3,7 +3,6 @@
 package org.nlogo.agent
 
 import org.nlogo.api, api.AgentException
-import scala.collection.SortedSet
 import java.util.ArrayList
 
 @annotation.strictfp
@@ -81,119 +80,91 @@ extends Neighbors {
 
   def xytoi(x: Int, y: Int): Int = y * world.worldWidth + x
 
-  def xyIterator(x: Int, y: Int, r: Int): Iterator[Int] = {
-    var a: SortedSet[Int] = SortedSet()
-    var xx = -1
-    var yy = -1
+  def getRegionRow(x: Int, r: Int, offset: Int, arr: ArrayList[(Int, Int)]): Unit = {
 
 
+    if (x-r > 0 && x+r <= world.worldWidth-1) {
+      arr.add((offset + x-r, offset + x+r+1))
 
-    val xMax = x + r.min(world.worldWidth-1)
-    val yMax = y + r.min(world.worldHeight-1)
-    val yMin = y -r.min(world.worldHeight-1)
-
-    var i = x - r.min(world.worldWidth-1)
-    var j = yMin
-    while (i <= xMax) {
-      j = yMin
-      while (j <= yMax) {
-        xx = i
-        yy = j
-        if (!xWraps) {
-          xx = xx.max(0).min(world.worldWidth-1)
-        } else if (xx < 0) {
-          xx = world.worldWidth + xx
-        } else if (xx >= world.worldWidth) {
-          xx %= world.worldWidth
-        }
-
-        if (!yWraps) {
-          yy = yy.max(0).min(world.worldHeight-1)
-        } else if (yy < 0) {
-          yy = world.worldHeight + yy
-        } else if (yy >= world.worldHeight) {
-          yy %= world.worldHeight
-        }
-
-//        println((i,j,xx,yy,xytoi(xx,yy)))
-        a += xytoi(xx, yy)
-
-        j += 1
+    } else if (2 * r + 1 >= world.worldWidth) {
+      if (xWraps) {
+        arr.add((offset + 0, offset + world.worldWidth))
+      } else {
+        arr.add((offset + (x - r).max(0), offset + (x + r + 1).min(world.worldWidth)))
       }
-      i += 1
+
+    } else if (x-r < 0) {
+      arr.add((offset + 0, x + r + 1))
+      if (xWraps) {
+        arr.add((offset + world.worldWidth + x - r, offset + world.worldWidth))
+      }
+
+    } else { // x + r >= world.worldWidth
+      if (xWraps) {
+        arr.add((offset + 0, offset + x + r - world.worldWidth + 1))
+      }
+      arr.add((offset + x - r, offset + world.worldWidth))
     }
-
-//    println(a)
-
-    a.iterator
   }
+
+  // 4 cases:
+  // 1. x-r >=0 and x + r <= w-1
+  // 2. 2r + 1 >= w
+  // 3. x-r < 0
+  // 4. x+r >= w
   
   def getRegion(X: Double, Y: Double, R: Double): ArrayList[(Int, Int)] = {
-//    val w = world.worldWidth
-//    val h = world.worldHeight
 
     val x: Int = X.toInt - world.minPxcor
     val y: Int = world.worldHeight - 1 - (Y.toInt - world.minPycor)
     val r: Int = if (X.toInt != X || Y.toInt != Y) R.toInt + 1 else R.toInt
 
     val ans: ArrayList[(Int, Int)] = new ArrayList()
-//    var (start, end, xx, yy, i) = (-1, -1, -1, -1, 0)
-    var i = 0
-    var start = -1
-    var prev = -1
+    val a = Array((-1, -1), (-1, -1))
 
-//    val lxx = (x + r) % w
-//    val gxx = w - r + x
-//    val lyy = (y + r) % h
-//    val gyy = h - r + y
+    if (y-r > 0 && y+r <= world.worldHeight-1) {
+      a(0) = (y-r, y+r+1)
 
-    val it = xyIterator(x, y, r)
-
-//    var i = (y - r).max(0) * w + (x - r).max(0)
-//    val max = (y + r).min(h-1) * w + (x + r).min(w)
-    while (it.hasNext) {
-      i = it.next()
-
-      if (start == -1) {
-        start = i
-      } else if (prev > -1 && i != prev + 1) {
-        ans.add((start, prev + 1))
-        start = i
+    } else if (2*r + 1 >= world.worldHeight) {
+      val b = ((y-r).max(0), (y+r+1).min(world.worldHeight))
+      if (yWraps) {
+        a(0) = (world.worldHeight+(y-r), world.worldHeight)
+        a(1) = b
+      } else {
+        a(0) = b
       }
 
-      prev = i
-
+    } else if (y-r < 0) {
+      a(0) = (0,y+r+1)
+      if (yWraps) {
+        a(1) = (world.worldHeight + y - r, world.worldHeight)
+      }
+    } else {
+      val b = (y - r, world.worldHeight)
+      if (yWraps) {
+        a(0) = (0, y + r - world.worldHeight + 1)
+        a(1) = b
+      } else {
+        a(0) = b
+      }
     }
 
-    if (start != -1) {
-      ans.add((start, prev + 1))
+    var i = a(0)._1
+    while (i < a(0)._2) {
+      getRegionRow(x, r, i * world.worldWidth, ans)
+      i += 1
     }
-//      xx = i % w
-//      yy = i / w
 
-//      if ((Math.abs(x - xx) <= r || (xWraps && ((xx <= lxx) || (xx >= gxx)))) &&
-//        (Math.abs(y - yy) <= r || (yWraps && ((yy <= lyy) || (yy >= gyy))))) {
-//        if (start == -1) {
-//          start = i
-//          end = i + 1
-//        } else {
-//          end += 1
-//        }
-//
-//      } else if (start != -1) {
-//        ans.add((start, end))
-//
-//        start = -1
-//        end = -1
-//      }
-//
-//
-//      i += 1
-//    }
+    if (a(1)._1 > -1) {
+      i = a(1)._1
+      while (i < a(1)._2) {
+        getRegionRow(x, r, i * world.worldWidth, ans)
+        i += 1
+      }
+    }
 
-//    if (start != -1) {
-//      ans.add((start, end))
-//    }
+    // foldLeft
+
     ans
   }
 
