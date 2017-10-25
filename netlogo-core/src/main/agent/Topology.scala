@@ -86,8 +86,17 @@ extends Neighbors {
     var xx = -1
     var yy = -1
 
-    for (i <- x - r.min(world.worldWidth-1) to x + r.min(world.worldWidth-1)) {
-      for (j <- y - r.min(world.worldHeight-1) to y + r.min(world.worldHeight-1)) {
+
+
+    val xMax = x + r.min(world.worldWidth-1)
+    val yMax = y + r.min(world.worldHeight-1)
+    val yMin = y -r.min(world.worldHeight-1)
+
+    var i = x - r.min(world.worldWidth-1)
+    var j = yMin
+    while (i <= xMax) {
+      j = yMin
+      while (j <= yMax) {
         xx = i
         yy = j
         if (!xWraps) {
@@ -109,7 +118,9 @@ extends Neighbors {
 //        println((i,j,xx,yy,xytoi(xx,yy)))
         a += xytoi(xx, yy)
 
+        j += 1
       }
+      i += 1
     }
 
 //    println(a)
