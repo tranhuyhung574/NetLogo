@@ -170,6 +170,18 @@ object Version extends Version {
   def startLogging() { _isLoggingEnabled = true }
   def stopLogging() { _isLoggingEnabled = false }
 
+  // I did a bit of research to try to correlate 3D previews with
+  // NetLogo versions. I couldn't come up with a 100% correct list,
+  // but these values are close enough, given that we don't often
+  // interact with NetLogo versions older than 4
+  private lazy val previewVersionMap =
+    Map(
+      "NetLogo 3-D Preview 1" -> numericValue("NetLogo 3.0"),
+      "NetLogo 3-D Preview 2" -> numericValue("NetLogo 3.1"),
+      "NetLogo 3D Preview 3" -> numericValue("NetLogo 3.2"),
+      "NetLogo 3D Preview 4" -> numericValue("NetLogo 3.2"),
+      "NetLogo 3D Preview 5" -> numericValue("NetLogo 4.0"))
+
   def numericValue(modelVersion: String): Int = {
     def calculateVersion(major: Int, minor: Int, patch: Int): Int =
       major * 100000 + minor * 1000 + patch * 10
@@ -179,7 +191,7 @@ object Version extends Version {
       val standardModifier = new Regex("(\\w+)(\\d+)")
       val nonStandardModifier = new Regex("([a-zA-Z0-9\\-]*)")
       val versionRegex = new Regex("NetLogo (?:3D )?(\\d)\\.(\\d+)(?:\\.(\\d+))?(?:-(.*))?")
-      val oldVersion = new Regex("NetLogo (\\d)\\.(\\d)(?:\\w+(\\d+))?")
+      val oldVersion = new Regex("NetLogo (?:3D )?(\\d)\\.(\\d)(?:(\\w+)(\\d+))?")
       val previewRegex = new Regex("NetLogo 3[-]?D Preview (\\d)")
       modelVersion match {
         case versionRegex(major, minor, patch, null) =>
@@ -197,14 +209,22 @@ object Version extends Version {
           }
         case versionRegex(major, minor, patch, nonStandardModifier(_)) =>
           calculateVersion(major.toInt, minor.toInt, Option(patch).map(_.toInt).getOrElse(0)) - 10000
-        case oldVersion(major, minor, modifier) =>
+        case oldVersion(major, minor, qualifier, modifier) =>
+          val modifierValue =
+            (qualifier, modifier) match {
+              case ("pre", modifier)   => modifier.toInt
+              case ("alpha", modifier) => 30 + modifier.toInt
+              case ("beta", modifier)  => 60 + modifier.toInt
+              case (_, modifier) if modifier != null => modifier.toInt
+              case (_, _) => 0
+            }
           if (modifier == null)
             calculateVersion(major.toInt, minor.toInt, 0)
           else if (minor.toInt == 0)
-            calculateVersion(major.toInt, minor.toInt, 0) - 10000 + modifier.toInt
+            calculateVersion(major.toInt, minor.toInt, 0) - 10000 + modifierValue
           else
-            calculateVersion(major.toInt, minor.toInt, 0) - 100 + modifier.toInt
-        case previewRegex(previewNum) => 390000 + previewNum.toInt * 10
+            calculateVersion(major.toInt, minor.toInt, 0) - 100 + modifierValue
+        case previewRegex(previewNum) => previewVersionMap(modelVersion)
         case _ => -1
       }
     }
