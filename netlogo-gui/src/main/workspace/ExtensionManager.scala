@@ -122,9 +122,10 @@ import ExtensionManager._
 // Extension manager will install itself as a listener.
 class ExtensionManager(
     userInteraction: UserInteraction,
-    evaluator: Evaluator,
-    messageCenter: WorkspaceMessageCenter,
-    loader: ExtensionLoader)
+    evaluator:       Evaluator,
+    messageCenter:   WorkspaceMessageCenter,
+    modelTracker:    ModelTracker,
+    loader:          ExtensionLoader)
   extends NvmExtensionManager
   with WorkspaceMessageListener {
 
@@ -138,6 +139,7 @@ class ExtensionManager(
   private var typeCache = Map[String, TokenType]()
 
   def anyExtensionsLoaded: Boolean = jars.nonEmpty
+  def activeModel = modelTracker.model
 
   private var testingMode: Boolean = false
 

@@ -13,7 +13,7 @@ import scala.collection.JavaConverters._
 class ExtensionManagerTests extends FunSuite with BeforeAndAfter {
   val helper = Helper.twoD
   val emptyManager = new ExtensionManager(
-    helper.userInteraction, helper.evaluator, helper.messageCenter, helper.jarLoader)
+    helper.userInteraction, helper.evaluator, helper.messageCenter, helper.modelTracker, helper.jarLoader)
 
   class ErrorSourceException extends Exception("problem")
 
@@ -45,7 +45,11 @@ class ExtensionManagerTests extends FunSuite with BeforeAndAfter {
     lazy val dummyClassManager = new DummyClassManager()
     lazy val memoryLoader = new InMemoryExtensionLoader("foo", dummyClassManager)
     lazy val inmemoryManager = new ExtensionManager(
-      helper.userInteraction, helper.evaluator, helper.messageCenter, memoryLoader)
+      helper.userInteraction, helper.evaluator, helper.messageCenter, helper.modelTracker, memoryLoader)
+  }
+
+  test("activeModel returns the model loaded by modelTracker") {
+    assertResult(helper.modelTracker.model)(emptyManager.activeModel)
   }
 
   test("loadedExtensions returns empty list when no extensions loaded") {

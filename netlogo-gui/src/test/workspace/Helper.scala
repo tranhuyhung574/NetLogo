@@ -46,7 +46,7 @@ class Helper(dialect: Dialect) extends WorkspaceDependencies {
     def link(p: Procedure): Procedure = ???
   }
   lazy val extensionManager =
-    new ExtensionManager(userInteraction, evaluator, messageCenter, jarLoader)
+    new ExtensionManager(userInteraction, evaluator, messageCenter, modelTracker, jarLoader)
   lazy val compilerServices =
     new LiveCompilerServices(compiler, extensionManager, world, evaluator)
   lazy val owner: JobManagerOwner = new HeadlessJobManagerOwner(messageCenter)

@@ -38,7 +38,7 @@ abstract class DefaultAbstractWorkspace(deps: WorkspaceDependencies) extends Abs
         val modelTracker: ModelTracker = new ModelTrackerImpl(messageCenter)
         val jobManager = Femto.get[JobManagerInterface]("org.nlogo.job.JobManager", owner, world)
         val evaluator = new Evaluator(jobManager, compiler, world)
-        val extensionManager = new ExtensionManager(userInteraction, evaluator, messageCenter, new JarLoader(modelTracker))
+        val extensionManager = new ExtensionManager(userInteraction, evaluator, messageCenter, modelTracker, new JarLoader(modelTracker))
         val compilerServices =
           new LiveCompilerServices(compiler, extensionManager, world, evaluator)
         val sourceOwners = Seq(aggregateManager)

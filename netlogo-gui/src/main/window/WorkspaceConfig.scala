@@ -98,7 +98,7 @@ class WorkspaceConfig extends WorkspaceDependencies {
 
   private def withDefaultExtensionManager: WorkspaceConfig = {
     if (! extensionManagerSet && userInteraction != null && evaluator != null && messageCenter != null && modelTracker != null) {
-      extensionManager = new ExtensionManager(userInteraction, evaluator, messageCenter, new JarLoader(modelTracker))
+      extensionManager = new ExtensionManager(userInteraction, evaluator, messageCenter, modelTracker, new JarLoader(modelTracker))
     }
     withDefaultCompilerServices
   }
