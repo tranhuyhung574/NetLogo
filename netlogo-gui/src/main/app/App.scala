@@ -167,8 +167,14 @@ object App {
     if (Version.systemDynamicsAvailable) {
       pico.add("org.nlogo.sdm.gui.NLogoGuiSDMFormat")
       pico.add(classOf[AddableLoader], "org.nlogo.sdm.gui.NLogoXGuiSDMFormat", new ConstantParameter(ScalaXmlElementFactory))
+      pico.addScalaObject("org.nlogo.sdm.gui.SDMGuiAutoConvertable")
+      pico.add(classOf[AggregateManagerInterface],
+        "org.nlogo.sdm.gui.GUIAggregateManager",
+        Array[Parameter] (
+          new ComponentParameter(classOf[AppFrame]),
+          new ComponentParameter(), new ComponentParameter(),
+          new ComponentParameter(), new ComponentParameter()))
     }
-    pico.addScalaObject("org.nlogo.sdm.gui.SDMGuiAutoConvertable")
 
     pico.addAdapter(new Adapters.ModelLoaderComponent())
 
@@ -193,12 +199,6 @@ object App {
       "org.nlogo.shape.editor.LinkShapeManagerDialog",
       Array[Parameter] (
         new ComponentParameter(classOf[AppFrame]),
-        new ComponentParameter(), new ComponentParameter()))
-    pico.add(classOf[AggregateManagerInterface],
-      "org.nlogo.sdm.gui.GUIAggregateManager",
-      Array[Parameter] (
-        new ComponentParameter(classOf[AppFrame]),
-        new ComponentParameter(), new ComponentParameter(),
         new ComponentParameter(), new ComponentParameter()))
     pico.add("org.nlogo.lab.gui.LabManager")
 
@@ -286,7 +286,10 @@ object App {
 
     val aggregateManager = pico.getComponent(classOf[AggregateManagerInterface])
 
-    workspaceConfig.withSourceOwner(aggregateManager)
+    if (aggregateManager != null)
+      workspaceConfig.withSourceOwner(aggregateManager)
+    else
+      workspaceConfig
   }
 }
 
