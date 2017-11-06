@@ -16,9 +16,10 @@ import org.nlogo.awt.UserCancelException
 import org.nlogo.core.{ AgentKind, CompilerException, Dialect, Femto, I18N }
 import org.nlogo.fileformat, fileformat.ScalaXmlElementFactory
 import org.nlogo.log.Logger
-import org.nlogo.nvm.PresentationCompilerInterface
+import org.nlogo.nvm.{ CompilerFlags, Optimizations => NvmOptimizations,
+  PresentationCompilerInterface }
 import org.nlogo.shape.{ LinkShapesManagerInterface, ShapesManagerInterface, TurtleShapesManagerInterface }
-import org.nlogo.util.{ NullAppHandler, Pico }
+import org.nlogo.util.NullAppHandler
 import org.nlogo.window._
 import org.nlogo.window.Events._
 import org.nlogo.window.Event.LinkParent
@@ -237,6 +238,16 @@ object App {
       if (is3D) new World3D()
       else      new World2D()
 
+    val optimizations =
+      if (is3D) NvmOptimizations.gui3DOptimizations
+      else      NvmOptimizations.guiOptimizations
+
+    val flags = CompilerFlags(
+      foldConstants = true,
+      optimizations = optimizations,
+      useGenerator = Version.useGenerator,
+      useOptimizer = Version.useOptimizer)
+
     val messageCenter = new WorkspaceMessageCenter()
     val modelTracker = new ModelTrackerImpl(messageCenter)
 
@@ -265,6 +276,7 @@ object App {
         .withControlSet(controlSet)
         .withExternalFileManager(pico.getComponent(classOf[ExternalFileManager]))
         .withFrame(frame)
+        .withFlags(flags)
         .withHubNetManagerFactory(pico.getComponent(classOf[HubNetManagerFactory]))
         .withKioskLevel(GUIWorkspace.KioskLevel.NONE)
         .withLinkParent(frame)
@@ -282,7 +294,7 @@ object App {
     val colorizer = new EditorColorizer(workspaceConfig.compiler, workspaceConfig.extensionManager)
     pico.addComponent(colorizer)
     pico.addComponent(workspaceConfig.compilerServices)
-    pico.addComponent(new org.nlogo.properties.EditDialogFactory(workspaceConfig.compilerServices, colorizer))
+    pico.add("org.nlogo.properties.EditDialogFactory")
 
     val aggregateManager = pico.getComponent(classOf[AggregateManagerInterface])
 

@@ -3,13 +3,14 @@
 package org.nlogo.workspace
 
 import org.nlogo.agent.{ Agent, World }
-import org.nlogo.api.{ AggregateManagerInterface, CompilerServices, FileIO, HubNetInterface,
+import org.nlogo.api.{ CompilerServices, FileIO, HubNetInterface,
   HubNetWorkspaceInterface, LogoException, LogoThunkFactory, PreviewCommands,
   SourceOwner, Workspace => APIWorkspace, WorldPropertiesInterface }
-import org.nlogo.core.{ CompilerException, Femto, Model, View, Widget => CoreWidget }
+import org.nlogo.core.{ CompilerException, Model, View, Widget => CoreWidget }
 import org.nlogo.nvm.{ Command, Context, EditorWorkspace, FileManager,
-  Instruction, Job, JobManagerInterface, JobManagerOwner, LoggingWorkspace,
-  MutableLong, PresentationCompilerInterface, Procedure, RuntimePrimitiveException, Tracer, Workspace => NvmWorkspace }
+  Instruction, Job, JobManagerInterface, JobManagerOwner, Linker, LoggingWorkspace,
+  MutableLong, PresentationCompilerInterface,
+  Procedure, RuntimePrimitiveException, Tracer, Workspace => NvmWorkspace }
 
 import collection.mutable.WeakHashMap
 import java.io.IOException
@@ -18,32 +19,6 @@ import java.nio.file.Paths
 import scala.util.Try
 
 import AbstractWorkspaceTraits._
-
-trait HubNetManagerFactory {
-  def newInstance(workspace: AbstractWorkspace): HubNetInterface
-}
-
-abstract class DefaultAbstractWorkspace(deps: WorkspaceDependencies) extends AbstractWorkspace(deps) {
-  def this(_world: World,
-    _compiler: PresentationCompilerInterface,
-    _hubNetManagerFactory: HubNetManagerFactory,
-    aggregateManager: AggregateManagerInterface) = this(
-      new WorkspaceDependencies {
-        val compiler: PresentationCompilerInterface = _compiler
-        val world: World = _world
-        val hubNetManagerFactory: HubNetManagerFactory = _hubNetManagerFactory
-        val userInteraction: UserInteraction = DefaultUserInteraction
-        val messageCenter: WorkspaceMessageCenter = new WorkspaceMessageCenter()
-        val owner: JobManagerOwner = new HeadlessJobManagerOwner(messageCenter)
-        val modelTracker: ModelTracker = new ModelTrackerImpl(messageCenter)
-        val jobManager = Femto.get[JobManagerInterface]("org.nlogo.job.JobManager", owner, world)
-        val evaluator = new Evaluator(jobManager, compiler, world)
-        val extensionManager = new ExtensionManager(userInteraction, evaluator, messageCenter, modelTracker, new JarLoader(modelTracker))
-        val compilerServices =
-          new LiveCompilerServices(compiler, extensionManager, world, evaluator)
-        val sourceOwners = Seq(aggregateManager)
-      })
-}
 
 abstract class AbstractWorkspace(private val deps: WorkspaceDependencies)
   extends {
@@ -142,7 +117,7 @@ abstract class AbstractWorkspace(private val deps: WorkspaceDependencies)
     }
 
     // used to allow initialization of procedures without a direct dependency on workspace
-    lazy val linker = new Evaluator.Linker {
+    lazy val linker = new Linker {
       def link(p: Procedure): Procedure = {
         p.init(AbstractWorkspace.this)
         p
@@ -296,7 +271,7 @@ object AbstractWorkspaceTraits {
       Checksummer.calculateGraphicsChecksum(this)
   }
 
-  trait CompileSupport extends WorkspaceMessageListener { this: AbstractWorkspace =>
+  trait CompileSupport extends BaseWorkspace with WorkspaceMessageListener { this: AbstractWorkspace =>
     val dialect = compiler.dialect
 
     // this is used to cache the compiled code used by the "run"
@@ -304,6 +279,10 @@ object AbstractWorkspaceTraits {
     private val _codeBits: WeakHashMap[String, Procedure] = new WeakHashMap[String, Procedure]()
 
     def codeBits: WeakHashMap[String, Procedure] = _codeBits
+
+    def clearRunCache(): Unit = {
+      codeBits.clear()
+    }
 
     @throws(classOf[CompilerException])
     def compileForRun(source: String, context: Context, reporter: Boolean): Procedure = {
@@ -332,7 +311,8 @@ object AbstractWorkspaceTraits {
       procedures.values.foreach(_.init(this))
     }
 
-    def processWorkspaceEvent(e: WorkspaceEvent): Unit = {
+    override def processWorkspaceEvent(e: WorkspaceEvent): Unit = {
+      super.processWorkspaceEvent(e)
       e match {
         case SwitchModel(_, _) => setProcedures(Procedure.NoProcedures)
         case _ =>
@@ -414,7 +394,6 @@ object AbstractWorkspaceTraits {
 
     abstract override def processWorkspaceEvent(e: WorkspaceEvent): Unit = {
       super.processWorkspaceEvent(e)
-
       e match {
         case AddInstrumentation("tracer", t: Tracer, _) =>
           setProfilingTracer(t)

@@ -5,16 +5,15 @@ package org.nlogo.workspace
 import org.nlogo.core.{ AgentKind, CompilationEnvironment, CompilerException, Let }
 import org.nlogo.api.{ JobOwner, LogoException, ReporterLogoThunk, CommandLogoThunk}
 import org.nlogo.agent.{ Agent, AgentSet, World }
-import org.nlogo.nvm.{ Activation, Context, JobManagerInterface, PresentationCompilerInterface, Procedure }
+import org.nlogo.nvm.{ Activation, CompilerFlags, Context, JobManagerInterface, Linker, PresentationCompilerInterface, Procedure }
 
 import scala.collection.immutable.Vector
 import scala.util.Try
 
 class Evaluator(jobManager: JobManagerInterface,
   compiler: PresentationCompilerInterface,
-  world: World) {
-
-import Evaluator.Linker
+  world: World,
+  flags: CompilerFlags) {
 
   @throws(classOf[CompilerException])
   def evaluateCommands(owner: JobOwner,
@@ -59,7 +58,7 @@ import Evaluator.Linker
    * @return whether the code did a "stop" at the top level
    */
   def runCompiledCommands(owner: JobOwner, procedure: Procedure) = {
-    val job = jobManager.makeConcurrentJob(owner, world.observers, procedure)
+    val job = jobManager.makeConcurrentJob(owner, world.agentSetOfKind(owner.kind), procedure)
     jobManager.addJob(job, true)
     job.stopping
   }
@@ -169,7 +168,7 @@ import Evaluator.Linker
     val results = compiler.compileMoreCode(
       wrappedSource,
       Some(if(reporter) "runresult" else "run"),
-      world.program, procedures, extensionManager, compilationEnvironment)
+      world.program, procedures, extensionManager, compilationEnvironment, flags)
     linker.link(results.head)
   }
 
@@ -182,7 +181,7 @@ import Evaluator.Linker
     linker: Linker) = {
     val wrappedSource = Evaluator.getHeader(agentClass, commands) + source + Evaluator.getFooter(commands)
     val results =
-      compiler.compileMoreCode(wrappedSource, displayName, world.program, procedures, extensionManager, compilationEnvironment)
+      compiler.compileMoreCode(wrappedSource, displayName, world.program, procedures, extensionManager, compilationEnvironment, flags)
     linker.link(results.head)
   }
 
@@ -193,11 +192,6 @@ import Evaluator.Linker
 
 
 object Evaluator {
-
-  trait Linker {
-    def link(p: Procedure): Procedure
-  }
-
   val agentTypeHint = Map[AgentKind, String](
     AgentKind.Observer -> "__observercode",
     AgentKind.Turtle -> "__turtlecode",

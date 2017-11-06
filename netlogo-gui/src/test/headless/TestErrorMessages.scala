@@ -50,7 +50,7 @@ class TestErrorMessages extends AbstractTestLanguage {
     val ex = intercept[CompilerException] {
       compiler.compileProgram(
         "breed [hunters hunter] hunters-own [fear] hunters-own [loathing]", newProgram,
-        workspace.getExtensionManager, workspace.getCompilationEnvironment)
+        workspace.getExtensionManager, workspace.getCompilationEnvironment, compilerFlags)
     }
     assertResult("Redeclaration of HUNTERS-OWN")(ex.getMessage)
   }

@@ -10,13 +10,12 @@ import java.nio.file.Paths
 
 import org.nlogo.api.{ ComponentSerialization, Version, RendererInterface, WorldDimensions3D,
   AggregateManagerInterface, FileIO, LogoException, ModelType, NetLogoLegacyDialect,
-  NetLogoThreeDDialect, CommandRunnable, ReporterRunnable, WorldResizer }
-import org.nlogo.core.{ AgentKind, CompilerException, Femto, Model, Output, Program, UpdateMode, WorldDimensions }
+  NetLogoThreeDDialect, CommandRunnable, Pico, ReporterRunnable, WorldResizer }
+import org.nlogo.core.{ CompilerException, Femto, Model, Output, Program, UpdateMode, WorldDimensions }
 import org.nlogo.agent.{ CompilationManagement, World, World2D, World3D }
-import org.nlogo.nvm.{ LabInterface, DefaultCompilerServices, PresentationCompilerInterface }
-import org.nlogo.workspace.{ DefaultAbstractWorkspace, HubNetManagerFactory, RuntimeError, WorkspaceEvent }
+import org.nlogo.nvm.{ CompilerFlags, DefaultCompilerServices, LabInterface, Optimizations, PresentationCompilerInterface }
+import org.nlogo.workspace.{ DefaultAbstractWorkspace, HeadlessCatchAll, HubNetManagerFactory, RuntimeError, WorkspaceEvent }
 import org.nlogo.fileformat, fileformat.{ NLogoFormat, NLogoXFormat, ScalaXmlElementFactory }
-import org.nlogo.util.Pico
 
 import scala.io.Codec
 
@@ -140,10 +139,11 @@ class HeadlessWorkspace(
   val renderer: RendererInterface,
   val aggregateManager: AggregateManagerInterface,
   hubNetManagerFactory: HubNetManagerFactory)
-extends DefaultAbstractWorkspace(_world, compiler, hubNetManagerFactory, aggregateManager)
+extends DefaultAbstractWorkspace(_world, compiler, hubNetManagerFactory, Seq(aggregateManager),
+  CompilerFlags(optimizations = Optimizations.standardOptimizations))
 with org.nlogo.workspace.Controllable
-with org.nlogo.workspace.DefaultWorldLoader
-with org.nlogo.api.ViewSettings {
+with org.nlogo.api.ViewSettings
+with HeadlessCatchAll {
   world.trailDrawer(renderer.trailDrawer)
 
   /**
@@ -210,6 +210,10 @@ with org.nlogo.api.ViewSettings {
     initForTesting(new WorldDimensions(minPxcor, maxPxcor, minPycor, maxPycor), source)
   }
 
+  private val compilerFlags =
+    if (compiler.dialect.is3D) CompilerFlags(optimizations = Optimizations.gui3DOptimizations)
+    else                       CompilerFlags(optimizations = Optimizations.guiOptimizations)
+
   /**
    * Internal use only.
    */
@@ -224,7 +228,7 @@ with org.nlogo.api.ViewSettings {
     }
     val newProgram = Program.fromDialect(dialect)
     val results = compiler.compileProgram(source, newProgram,
-      getExtensionManager, getCompilationEnvironment)
+      getExtensionManager, getCompilationEnvironment, compilerFlags)
     procedures = results.proceduresMap
     codeBits.clear()
     init()
@@ -285,13 +289,6 @@ with org.nlogo.api.ViewSettings {
 
   override def getMinimumWidth = 0
   override def insetWidth = 0
-  override def computePatchSize(width: Int, numPatches: Int): Double =
-    width / numPatches
-  override def calculateHeight(d: WorldDimensions) =
-    (d.height * d.patchSize).toInt
-  def calculateWidth(d: WorldDimensions): Int =
-    (d.width * patchSize).toInt
-  override def resizeView() { }
   override def viewWidth = world.worldWidth
   override def viewHeight = world.worldHeight
   override def patchSize(patchSize: Double) {
@@ -315,17 +312,6 @@ with org.nlogo.api.ViewSettings {
     if (!compilerTestingMode)
       world.clearTurtles()
   }
-  override def inspectAgent(agent: org.nlogo.api.Agent, radius: Double) {
-    if (!silent)
-      println(agent)
-  }
-  def inspectAgent(agentClass: AgentKind, agent: org.nlogo.agent.Agent, radius: Double) {
-    if (!silent) {
-      println(agent)
-    }
-  }
-  override def stopInspectingAgent(agent: org.nlogo.agent.Agent): Unit = { }
-  override def stopInspectingDeadAgents(): Unit = { }
   override def getAndCreateDrawing =
     renderer.trailDrawer.getAndCreateDrawing(true)
   override def importDrawing(file: org.nlogo.core.File) {
@@ -436,11 +422,6 @@ with org.nlogo.api.ViewSettings {
    */
   def ownerFinished(owner: org.nlogo.api.JobOwner) { }
 
-  /**
-   * Internal use only.
-   */
-  def updateDisplay(haveWorldLockAlready: Boolean, forced: Boolean) { }
-
   def disablePeriodicRendering(): Unit = { }
   def enablePeriodicRendering(): Unit = { }
 
@@ -461,34 +442,6 @@ with org.nlogo.api.ViewSettings {
    */
   def periodicUpdate() { }
 
-  /**
-   * Internal use only.
-   */
-  override def magicOpen(name: String) = unsupported
-
-  /**
-   * Internal use only.
-   */
-  def startLogging(properties: String) = unsupported
-
-  /**
-   * Internal use only.
-   */
-  def zipLogFiles(filename: String) = unsupported
-
-  /**
-   * Internal use only.
-   */
-  def deleteLogFiles() = unsupported
-
-  def logCustomMessage(msg: String): Unit = unsupported
-
-  def logCustomGlobals(nameValuePairs: Seq[(String, String)]): Unit = unsupported
-
-  /**
-   * Internal use only.
-   */
-
   // this is a blatant hack that makes it possible to test the new stack trace stuff.
   // lastErrorReport gives more information than the regular exception that gets thrown from the
   // command function.  -JC 11/16/10
@@ -506,24 +459,6 @@ with org.nlogo.api.ViewSettings {
           lastLogoException = e.exception.asInstanceOf[LogoException]
         }
       case _ =>
-    }
-  }
-
-  /**
-   * Internal use only.
-   */
-  def runtimeError(owner: org.nlogo.api.JobOwner,
-    manager: org.nlogo.nvm.JobManagerInterface,
-    context: org.nlogo.nvm.Context,
-    instruction: org.nlogo.nvm.Instruction,
-    ex: Exception) {
-    ex match {
-      case le: LogoException =>
-        lastLogoException = le
-        lastErrorReport = new ErrorReport(owner, context, instruction, le)
-      case _ =>
-        System.err.println("owner: " + owner.displayName)
-        org.nlogo.api.Exceptions.handle(ex)
     }
   }
 

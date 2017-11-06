@@ -11,7 +11,6 @@ import collection.mutable.WeakHashMap
 
 trait Workspace
   extends ApiWorkspace
-  with JobManagerOwner
   with CompilerServices {
 
   def world: World
@@ -26,10 +25,15 @@ trait Workspace
   def behaviorSpaceExperimentName: String
   def behaviorSpaceExperimentName(name: String): Unit
 
+  def owner: JobManagerOwner
+
   def getComponent[A <: AnyRef](componentClass: Class[A]): Option[A]
 
   /** lastRunTimes is used by `every` to track how long ago a job ran */
   def lastRunTimes: WeakHashMap[Job, WeakHashMap[Agent, WeakHashMap[Command, MutableLong]]]
+
+  /* for lab.Worker */
+  def updateDisplay(haveWorldLockAlready: Boolean, forced: Boolean): Unit
 
   /* compiler controls */
   @throws(classOf[CompilerException])
@@ -54,6 +58,8 @@ trait Workspace
   def evaluateReporter(owner: JobOwner, source: String, agent: Agent): AnyRef
   @throws(classOf[CompilerException])
   def evaluateReporter(owner: JobOwner, source: String, agents: AgentSet): AnyRef
+
+  def linker: Linker
 
   /* components */
   def fileManager: FileManager
@@ -110,3 +116,8 @@ trait LoggingWorkspace {
   def zipLogFiles(filename: String): Unit
   def deleteLogFiles(): Unit
 }
+
+trait Linker {
+  def link(p: Procedure): Procedure
+}
+

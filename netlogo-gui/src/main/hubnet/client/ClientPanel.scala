@@ -8,9 +8,8 @@ import java.net.{Socket, ConnectException, UnknownHostException, NoRouteToHostEx
 import javax.swing.JPanel
 
 import org.nlogo.core.{ I18N, LogoList }
-import org.nlogo.api.{ Dump, MersenneTwisterFast, PlotInterface, DummyLogoThunkFactory, TwoDVersion }
+import org.nlogo.api.{ Dump, EditorCompiler, MersenneTwisterFast, PlotInterface, DummyLogoThunkFactory, TwoDVersion }
 import org.nlogo.agent.{ AbstractExporter, ConstantSliderConstraint }
-import org.nlogo.nvm.PresentationCompilerInterface
 import org.nlogo.plot.{ PlotExporter, Plot, PlotManager }
 import org.nlogo.hubnet.connection.{ Streamable, ConnectionTypes, AbstractConnection }
 import org.nlogo.hubnet.mirroring.{ OverrideList, HubNetLinkStamp, HubNetPlotPoint, HubNetLine, HubNetTurtleStamp }
@@ -33,7 +32,7 @@ import scala.concurrent.Future
 // for 2D (assuming the rest of HubNet was updated as well). - RG 10/23/17
 class ClientPanel(editorFactory: org.nlogo.window.EditorFactory,
                   errorHandler:  ErrorHandler,
-                  compiler:      PresentationCompilerInterface) extends JPanel with
+                  compiler:      EditorCompiler) extends JPanel with
         AddJobEvent.Handler with
         ExportPlotEvent.Handler with
         InterfaceGlobalEvent.Handler with

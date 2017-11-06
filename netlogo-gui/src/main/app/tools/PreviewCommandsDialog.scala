@@ -11,7 +11,7 @@ import org.nlogo.api.{ PreviewCommands, Version }
 import org.nlogo.awt.{ Fonts, Positioning }
 import org.nlogo.core.{ AgentKind, CompilerException, I18N, Model }
 import org.nlogo.swing.Utils.addEscKeyAction
-import org.nlogo.window.{ EditorColorizer, GraphicsPreviewInterface }
+import org.nlogo.window.{ DefaultEditorColorizer, GraphicsPreviewInterface }
 import org.nlogo.workspace.{ Evaluator, WorkspaceFactory }
 import org.nlogo.workspace.ModelsLibrary.getImagePath
 import org.nlogo.workspace.PreviewCommandsRunner.initWorkspace
@@ -38,7 +38,7 @@ class PreviewCommandsDialog(
   def previewCommands = _previewCommands
 
   val guiState = new GUIState(model, modelPath, workspaceFactory)
-  val editorPanel = new EditorPanel(new EditorColorizer(workspace))
+  val editorPanel = new EditorPanel(DefaultEditorColorizer(workspace))
   val comboBox = editorPanel.comboBox
   val editor = editorPanel.editor
   val previewPanel = new PreviewPanel(graphicsPreview)

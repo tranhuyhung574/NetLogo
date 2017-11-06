@@ -7,7 +7,7 @@ import java.awt.{ Component, Frame }
 import org.nlogo.core.Femto
 import org.nlogo.api.{ ControlSet, SourceOwner }
 import org.nlogo.agent.{ CompilationManagement, World }
-import org.nlogo.nvm.{ JobManagerInterface, PresentationCompilerInterface }
+import org.nlogo.nvm.{ CompilerFlags, JobManagerInterface, PresentationCompilerInterface }
 import org.nlogo.workspace.{ Evaluator, ExtensionManager, HubNetManagerFactory, JarLoader,
   LiveCompilerServices, ModelTracker, WorkspaceDependencies,
   WorkspaceMessageCenter, ModelTrackerImpl, UserInteraction }
@@ -29,6 +29,7 @@ class WorkspaceConfig extends WorkspaceDependencies {
   var evaluator: Evaluator = _
   var extensionManager: ExtensionManager = _
   var externalFileManager: ExternalFileManager = _
+  var flags: CompilerFlags = _
   var frame: Frame = _
   var hubNetManagerFactory: HubNetManagerFactory = _
   var jobManager: JobManagerInterface = _
@@ -84,9 +85,14 @@ class WorkspaceConfig extends WorkspaceDependencies {
     withDefaultExtensionManager
   }
 
+  def withFlags(e: CompilerFlags): WorkspaceConfig = {
+    flags = e
+    this
+  }
+
   private def withDefaultEvaluator: WorkspaceConfig = {
-    if (! evaluatorSet && jobManager != null && compiler != null && world != null)
-      evaluator = new Evaluator(jobManager, compiler, world)
+    if (! evaluatorSet && jobManager != null && compiler != null && world != null && flags != null)
+      evaluator = new Evaluator(jobManager, compiler, world, flags)
     withDefaultExtensionManager
   }
 

@@ -1,11 +1,11 @@
 // (C) Uri Wilensky. https://github.com/NetLogo/NetLogo
 
-package org.nlogo.util
+package org.nlogo.api
 
 import org.picocontainer.{ DefaultPicoContainer, Parameter }
 import org.picocontainer.behaviors.Caching
 
-class Pico extends DefaultPicoContainer(new Caching)
+private[nlogo] class Pico extends DefaultPicoContainer(new Caching)
 {
   def add(name:String) {
     addComponent(Class.forName(name))

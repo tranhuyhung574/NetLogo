@@ -9,7 +9,7 @@ import org.nlogo.agent.CompilationManagement
 import org.nlogo.api.{Equality, JobOwner, LogoException, NetLogoLegacyDialect,
   NetLogoThreeDDialect, TwoDVersion, ThreeDVersion, Version, WorldDimensions3D }
 import org.nlogo.core.{ AgentKind, CompilerException, Model, Program, WorldDimensions }
-import org.nlogo.nvm.PresentationCompilerInterface
+import org.nlogo.nvm.{ CompilerFlags, PresentationCompilerInterface, Optimizations }
 import org.nlogo.workspace.AbstractWorkspace
 import org.nlogo.headless.test.{ LanguageTest, NormalMode, RunMode, TestMode }
 import org.nlogo.core.Femto
@@ -68,6 +68,7 @@ object AbstractTestLanguage {
   trait Runner {
     def workspace: HeadlessWorkspace
     def compiler: PresentationCompilerInterface
+    def compilerFlags: CompilerFlags
     def cleanup(): Unit
     def defineProcedures(source: String): Unit
     def instance: AbstractTestLanguage.TestInstance
@@ -107,6 +108,10 @@ abstract class AbstractTestLanguage(tags: Tag*) extends TaggedFunSuite(tags: _*)
   class RunnerImpl(val instance: TestInstance, makeOwner: AbstractWorkspace => JobOwner)
     extends Runner {
 
+    val compilerFlags =
+      if (instance.version.is3D) CompilerFlags(optimizations = Optimizations.gui3DOptimizations)
+      else                       CompilerFlags(optimizations = Optimizations.guiOptimizations)
+
     val compiler =
       Femto.get[PresentationCompilerInterface]("org.nlogo.compile.Compiler", instance.dialect)
 
@@ -136,7 +141,7 @@ abstract class AbstractTestLanguage(tags: Tag*) extends TaggedFunSuite(tags: _*)
       val results = {
         compiler.compileProgram(
           HeadlessWorkspace.TestDeclarations + source, newProgram,
-          workspace.getExtensionManager, workspace.getCompilationEnvironment)
+          workspace.getExtensionManager, workspace.getCompilationEnvironment, compilerFlags)
       }
       workspace.setProcedures(results.proceduresMap)
       workspace.world.asInstanceOf[CompilationManagement].program(results.program)

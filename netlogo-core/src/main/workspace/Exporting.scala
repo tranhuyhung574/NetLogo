@@ -42,8 +42,11 @@ trait Exporting extends Plotting { this: AbstractWorkspace =>
     writer.println(
       Dump.csv.encode(
         plotManager.currentPlot.map(_.name).getOrElse("")))
-    plotManager.getPlotNames.foreach { name =>
-      new PlotExporter(plotManager.getPlot(name),Dump.csv).export(writer)
+    for {
+      name <- plotManager.getPlotNames
+      plot <- plotManager.getPlot(name)
+    } {
+      new PlotExporter(plot, Dump.csv).export(writer)
       writer.println()
     }
   }
@@ -53,7 +56,11 @@ trait Exporting extends Plotting { this: AbstractWorkspace =>
     new AbstractExporter(filename) {
       override def export(writer: PrintWriter) {
         exportInterfaceGlobals(writer)
-        new PlotExporter(plotManager.getPlot(plotName),Dump.csv).export(writer)
+        for {
+          plot <- plotManager.getPlot(plotName)
+        } {
+          new PlotExporter(plot, Dump.csv).export(writer)
+        }
       }
     }.export("plot",modelTracker.modelFileName, exportVersion, "")
   }
@@ -72,9 +79,11 @@ trait Exporting extends Plotting { this: AbstractWorkspace =>
     new AbstractExporter(filename) {
       override def export(writer: PrintWriter) {
         exportInterfaceGlobals(writer)
-
-        plotManager.getPlotNames.foreach { name =>
-          new PlotExporter(plotManager.getPlot(name),Dump.csv).export(writer)
+        for {
+          name <- plotManager.getPlotNames
+          plot <- plotManager.getPlot(name)
+        } {
+          new PlotExporter(plot, Dump.csv).export(writer)
           writer.println()
         }
       }

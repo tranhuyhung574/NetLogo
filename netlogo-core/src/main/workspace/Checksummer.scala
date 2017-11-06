@@ -2,18 +2,20 @@
 
 package org.nlogo.workspace
 
+import
+  org.nlogo.api.{ HexString, PreviewCommands, Workspace },
+    HexString.toHexString
 import java.io.PrintWriter
-import org.nlogo.api.{ PreviewCommands, Workspace }
-import org.nlogo.api.HexString
 
 object Checksummer {
   def initModelForChecksumming(workspace: Workspace) {
     workspace.renderer.renderLabelsAsRectangles_=(true)
-    val commands = workspace.previewCommands match {
+    val source = workspace.previewCommands match {
       case PreviewCommands.Custom(source) => source
       case _ => PreviewCommands.Default.source // may or may not compile, but we'll try
     }
-    workspace.command("random-seed 0\n" + commands)
+    workspace.seedRNGs(0)
+    workspace.command(source)
   }
   def calculateWorldChecksum(workspace: Workspace): String =
     calculateChecksum(workspace.exportWorld _)
@@ -23,6 +25,7 @@ object Checksummer {
       raster.getData.getPixels(0, 0, raster.getWidth, raster.getHeight, null: Array[Int])
         .foreach(writer.println)
     }
+  // public for testing - ST 7/15/10
   def calculateChecksum(fn: PrintWriter => Unit): String = {
     val output = {
       val outputStream = new java.io.ByteArrayOutputStream
@@ -33,6 +36,6 @@ object Checksummer {
       outputStream.toString.replaceAll("\r\n", "\n")  // avoid platform differences
     }
     val digester = java.security.MessageDigest.getInstance("SHA")
-    HexString.toHexString(digester.digest(output.getBytes))
+    toHexString(digester.digest(output.getBytes))
   }
 }

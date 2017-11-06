@@ -2,16 +2,14 @@
 
 package org.nlogo.workspace
 
-import org.nlogo.core.{ Dialect, DummyCompilationEnvironment, Femto }
-import org.nlogo.api.{ NetLogoLegacyDialect, NetLogoThreeDDialect, SourceOwner }
-import org.nlogo.agent.{ World2D, World3D }
+import org.nlogo.core.{ DummyCompilationEnvironment, Femto, NetLogoCore }
+import org.nlogo.api.SourceOwner
+import org.nlogo.agent.World2D
 import org.nlogo.nvm.{ CompilerFlags, JobManagerInterface, JobManagerOwner, Linker,
   Optimizations, PresentationCompilerInterface, Procedure }
 
 object Helper {
-  def twoD: Helper = new Helper(NetLogoLegacyDialect)
-  def threeD: Helper = new Helper(NetLogoThreeDDialect)
-  def withDialect(dialect: Dialect): Helper = new Helper(dialect)
+  def twoD: Helper = new Helper()
   class DummyJobManagerOwner extends JobManagerOwner {
     private def unsupported = throw new UnsupportedOperationException
     def ownerFinished(owner: org.nlogo.api.JobOwner): Unit = unsupported
@@ -27,22 +25,19 @@ object Helper {
 
 import Helper._
 
-class Helper(dialect: Dialect) extends WorkspaceDependencies {
+class Helper extends WorkspaceDependencies {
+  val dialcet = NetLogoCore
   lazy val messageCenter = new WorkspaceMessageCenter()
   lazy val modelTracker = new ModelTrackerImpl(messageCenter)
-  lazy val world =
-    if (dialect.is3D) new World3D()
-    else              new World2D()
+  lazy val world = new World2D()
   lazy val compilationEnvironment =
     new DummyCompilationEnvironment()
   lazy val compiler =
-    Femto.get[PresentationCompilerInterface]("org.nlogo.compile.Compiler", dialect)
+    Femto.scalaSingleton[PresentationCompilerInterface]("org.nlogo.compile.Compiler")
   lazy val jobManager =
     Femto.get[JobManagerInterface]("org.nlogo.job.JobManager", new DummyJobManagerOwner(), world)
   lazy val flags = {
-    val optimizations =
-      if (dialect.is3D) Optimizations.gui3DOptimizations
-      else      Optimizations.guiOptimizations
+    val optimizations = Optimizations.guiOptimizations
     CompilerFlags(optimizations = optimizations)
   }
   lazy val evaluator = new Evaluator(jobManager, compiler, world, flags)

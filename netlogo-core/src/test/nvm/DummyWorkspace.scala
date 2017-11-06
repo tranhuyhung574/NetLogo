@@ -16,6 +16,8 @@ class DummyWorkspace extends Workspace {
 
   def dialect = NetLogoLegacyDialect
   override def procedures: ListMap[String,Procedure] = ListMap.empty[String, Procedure]
+  override def owner = unsupported
+  override def linker = unsupported
   override def joinForeverButtons(agent: Agent) = unsupported
   override def addJobFromJobThread(job: Job) = unsupported
   override def getExtensionManager = unsupported
@@ -73,11 +75,13 @@ class DummyWorkspace extends Workspace {
   override def behaviorSpaceRunNumber = 0
   override def behaviorSpaceRunNumber(n: Int) = unsupported
   override def previewCommands = unsupported
+  override def updateDisplay(haveWorldLockAlready: Boolean,forced: Boolean): Unit = unsupported
 
   // from ImporterUser
   override def setOutputAreaContents(text: String) = unsupported
   override def currentPlot(plot: String) = unsupported
   override def getPlot(plot: String) = unsupported
+  override def findPlot(plot: String) = unsupported
   override def isExtensionName(name: String) = unsupported
   override def importExtensionData(name: String, data: java.util.List[Array[String]], handler: ImportErrorHandler) = unsupported
 
@@ -87,12 +91,6 @@ class DummyWorkspace extends Workspace {
   override def setDimensions(dim: WorldDimensions) = unsupported
   override def setDimensions(dim: WorldDimensions, patchSize: Double) = unsupported
   override def setDimensions(dim: org.nlogo.core.WorldDimensions,showProgress: Boolean,stop: org.nlogo.api.WorldResizer.JobStop): Unit = unsupported
-
-  // from JobManagerOwner
-  override def runtimeError(owner: JobOwner, manager: JobManagerInterface, context: Context, instruction: Instruction, ex: Exception) = unsupported
-  override def ownerFinished(owner: JobOwner) = unsupported
-  override def periodicUpdate() = unsupported
-  override def updateDisplay(haveWorldLockAlready: Boolean,forced: Boolean): Unit = unsupported
 
   // from RandomServices
   override def auxRNG = null

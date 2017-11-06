@@ -15,10 +15,11 @@ trait Plotting extends WorkspaceMessageListener { this: LogoThunkFactory =>
 
   // methods used when importing plots
   def currentPlot(plot: String) {
-    plotManager.currentPlot = Some(plotManager.getPlot(plot))
+    plotManager.currentPlot = plotManager.getPlot(plot)
   }
 
-  def getPlot(plot: String): PlotInterface = plotManager.getPlot(plot)
+  def getPlot(plot: String) = findPlot(plot).orNull
+  def findPlot(plot: String): Option[PlotInterface] = plotManager.getPlot(plot)
 
   // The PlotManager has already-compiled thunks that it runs to setup and update
   // plots.  But those thunks need a Context to run in, which isn't known until
@@ -34,6 +35,7 @@ trait Plotting extends WorkspaceMessageListener { this: LogoThunkFactory =>
   }
 
   abstract override def processWorkspaceEvent(e: WorkspaceEvent): Unit = {
+    super.processWorkspaceEvent(e)
     e match {
       case SwitchModel(_, _) =>
         plotManager.forgetAll()

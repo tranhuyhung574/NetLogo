@@ -2,7 +2,7 @@
 
 package org.nlogo.util
 
-import org.scalatest.FunSuite
+import org.scalatest.{ FunSuite, Tag }
 import scala.util.DynamicVariable
 import org.hamcrest.{Description, BaseMatcher, Matcher}
 import reflect.ClassTag
@@ -66,8 +66,8 @@ import
 trait MockSuite extends FunSuite {
 
   // this is the main test method provided by this trait.
-  def mockTest(name: String)(f: => Unit) {
-    test(name) {
+  def mockTest(name: String, tags: Tag*)(f: => Unit) {
+    test(name, tags: _*) {
       val mockery = new JUnit4Mockery() {
         setThreadingPolicy(new Synchroniser())
         setImposteriser(ClassImposteriser.INSTANCE)
