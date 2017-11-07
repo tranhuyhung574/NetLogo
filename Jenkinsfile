@@ -17,6 +17,9 @@ pipeline {
       steps {
         sh 'git submodule foreach git reset --hard'
         sh 'git submodule update --init'
+        sh "./sbt clean"
+        sh "./sbt netlogo/clean"
+        sh "./sbt headless/clean"
         sh "./sbt update"
         sh "./sbt all"
       }
