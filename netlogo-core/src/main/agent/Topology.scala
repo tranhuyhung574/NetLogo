@@ -77,8 +77,8 @@ extends Neighbors {
   // Box.getPN, the source.pycor gets tested once, and then if Box.getPN calls
   // Topology.getPatchNorth, then source.pycor gets redundantly tested again.
   // - JD, ST 6/3/04
-
-  def getRegionRow(x: Int, r: Int, offset: Int, arr: ArrayList[(Int, Int)]): Unit = {
+  @scala.inline
+  private final def getRegionRow(x: Int, r: Int, offset: Int, arr: ArrayList[(Int, Int)]): Unit = {
 
     val low_within = x-r >= 0
     val high_within = x+r <= world.worldWidth-1
@@ -104,7 +104,8 @@ extends Neighbors {
 
   }
 
-  def mergeAdd(value: (Int, Int), arr: ArrayList[(Int, Int)]): Unit = {
+  @scala.inline
+  private final def mergeAdd(value: (Int, Int), arr: ArrayList[(Int, Int)]): Unit = {
     val s = arr.size()
     if (s == 0 || arr.get(s - 1)._2 < value._1) {
       arr.add(value)

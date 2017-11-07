@@ -29,12 +29,6 @@ public strictfp class InRadiusOrCone
 
   public List<Agent> inRadius(Agent agent, AgentSet sourceSet,
                               double radius, boolean wrap) {
-//    int worldWidth = world.worldWidth();
-//    int worldHeight = world.worldHeight();
-//    int maxPxcor = world.maxPxcor();
-//    int maxPycor = world.maxPycor();
-//    int minPxcor = world.minPxcor();
-//    int minPycor = world.minPycor();
 
     List<Agent> result = new ArrayList<Agent>();
     Patch startPatch;
@@ -42,7 +36,6 @@ public strictfp class InRadiusOrCone
 
     if (agent instanceof Turtle) {
       Turtle startTurtle = (Turtle) agent;
-      startPatch = startTurtle.getPatchHere();
       startX = startTurtle.xcor();
       startY = startTurtle.ycor();
     } else {
@@ -50,42 +43,6 @@ public strictfp class InRadiusOrCone
       startX = startPatch.pxcor;
       startY = startPatch.pycor;
     }
-
-//    int dxmin = 0;
-//    int dxmax = 0;
-//    int dymin = 0;
-//    int dymax = 0;
-//
-//    int r = (int) StrictMath.ceil(radius);
-//
-//    if (world.wrappingAllowedInX()) {
-//      double width = worldWidth / 2.0;
-//      if (r < width) {
-//        dxmax = r;
-//        dxmin = -r;
-//      } else {
-//        dxmax = (int) StrictMath.floor(width);
-//        dxmin = -(int) StrictMath.ceil(width - 1);
-//      }
-//    } else {
-//      int xdiff = minPxcor - startPatch.pxcor;
-//      dxmin = StrictMath.abs(xdiff) < r ? xdiff : -r;
-//      dxmax = StrictMath.min((maxPxcor - startPatch.pxcor), r);
-//    }
-//    if (world.wrappingAllowedInY()) {
-//      double height = worldHeight / 2.0;
-//      if (r < height) {
-//        dymax = r;
-//        dymin = -r;
-//      } else {
-//        dymax = (int) StrictMath.floor(height);
-//        dymin = -(int) StrictMath.ceil(height - 1);
-//      }
-//    } else {
-//      int ydiff = minPycor - startPatch.pycor;
-//      dymin = StrictMath.abs(ydiff) < r ? ydiff : -r;
-//    }
-//      dymax = StrictMath.min((maxPycor - startPatch.pycor), r);
 
     HashSet<Long> cachedIDs = null;
     if (! sourceSet.isBreedSet()) {
@@ -100,26 +57,15 @@ public strictfp class InRadiusOrCone
     }
 
     ArrayList<Tuple2<Object, Object>> regions = world.topology().getRegion(startX, startY, radius);
-//    System.out.println(regions);
     Patch patches[] = new Patch[world.patches().count()];
     Agent worldPatches[] = ((ArrayAgentSet) world.patches()).array();
-//    System.out.println(Arrays.toString(worldPatches));
     int curr = 0;
     int length;
     for (Tuple2<Object, Object> region : regions) {
       int r1 = (int)region._1();
       int r2 = (int)region._2();
       length = r2 - r1;
-//      if (length > 5) {
       System.arraycopy(worldPatches, r1, patches, curr, length);
-
-//      } else {
-//        int i = 0;
-//        while (i < length) {
-//          patches[curr + i] = (Patch) worldPatches[r1 + i];
-//          i++;
-//        }
-//      }
 
       curr += length;
     }
@@ -154,10 +100,6 @@ public strictfp class InRadiusOrCone
             }
           }
         }
-//        } catch (AgentException e) {
-//          org.nlogo.api.Exceptions.ignore(e);
-//        }
-//      }
     }
     return result;
   }
@@ -166,10 +108,6 @@ public strictfp class InRadiusOrCone
                             double radius, double angle, boolean wrap) {
     int worldWidth = world.worldWidth();
     int worldHeight = world.worldHeight();
-    int maxPxcor = world.maxPxcor();
-    int maxPycor = world.maxPycor();
-    int minPxcor = world.minPxcor();
-    int minPycor = world.minPycor();
 
     int m;
     int n;
@@ -196,50 +134,9 @@ public strictfp class InRadiusOrCone
     }
 
     List<Agent> result = new ArrayList<Agent>();
-    Patch startPatch = startTurtle.getPatchHere();
     double half = angle / 2;
-    // these four variables determine which patches we will check.
-    // the patches we check always form a rectangle.  usually it
-    // will be a square, but if the radius is large enough, then
-    // it might be a rectangle.
-    int dxmin = 0;
-    int dymin = 0;
-    int dxmax = 0;
-    int dymax = 0;
 
     int r = (int) StrictMath.ceil(radius);
-
-    // make sure to use half the world dimensions rather than just max-p(x/y)cor
-    // since when the origin is off-center that may actually be 0 and thus
-    // nothing gets searched ev 9/12/07
-    if (world.wrappingAllowedInX()) {
-      double width = worldWidth / 2.0;
-      if (r < width) {
-        dxmax = r;
-        dxmin = -r;
-      } else {
-        dxmax = (int) StrictMath.floor(width);
-        dxmin = -(int) StrictMath.ceil(width - 1);
-      }
-    } else {
-      int xdiff = minPxcor - startPatch.pxcor;
-      dxmin = StrictMath.abs(xdiff) < r ? xdiff : -r;
-      dxmax = StrictMath.min((maxPxcor - startPatch.pxcor), r);
-    }
-    if (world.wrappingAllowedInY()) {
-      double height = worldHeight / 2.0;
-      if (r < height) {
-        dymax = r;
-        dymin = -r;
-      } else {
-        dymax = (int) StrictMath.floor(height);
-        dymin = -(int) StrictMath.ceil(height - 1);
-      }
-    } else {
-      int ydiff = minPycor - startPatch.pycor;
-      dymin = StrictMath.abs(ydiff) < r ? ydiff : -r;
-      dymax = StrictMath.min((maxPycor - startPatch.pycor), r);
-    }
 
     HashSet<Long> cachedIDs = null;
     if (! sourceSet.isBreedSet()) {
@@ -253,65 +150,79 @@ public strictfp class InRadiusOrCone
       cachedIDs = new HashSet<Long>(0);
     }
 
+    ArrayList<Tuple2<Object, Object>> regions = world.topology().getRegion(startTurtle.xcor(), startTurtle.ycor(), radius);
+    Patch patches[] = new Patch[world.patches().count()];
+    Agent worldPatches[] = ((ArrayAgentSet) world.patches()).array();
+    int curr = 0;
+    int length;
+    for (Tuple2<Object, Object> region : regions) {
+      int r1 = (int)region._1();
+      int r2 = (int)region._2();
+      length = r2 - r1;
+      System.arraycopy(worldPatches, r1, patches, curr, length);
+
+      curr += length;
+    }
+
     // loop through the patches in the rectangle.  (it doesn't matter what
     // order we check them in.)
-    for (int dy = dymin; dy <= dymax; dy++) {
-      for (int dx = dxmin; dx <= dxmax; dx++) {
-        // incone is optimized assuming a torus world making incone use the topology properly
-        // will require a significant re-write. maybe it's  candidate for optimizations
-        // for each topology.  ev 9/5/05
-        Patch patch = world.getPatchAtWrap((double) startPatch.pxcor + dx, (double) startPatch.pycor + dy);
-        if (patch != null) {
-          if (sourceSet.kind() == AgentKindJ.Patch()) {
-            // loop through our world copies
-            outer:
-            for (int worldOffsetX = -m; worldOffsetX <= m; worldOffsetX++) {
-              for (int worldOffsetY = -n; worldOffsetY <= n; worldOffsetY++) {
-                if ((sourceSet == world.patches() || cachedIDs.contains(new Long(patch.id())))
-                    && isInCone(patch.pxcor + worldWidth * worldOffsetX,
-                    patch.pycor + worldHeight * worldOffsetY,
-                    startTurtle.xcor(), startTurtle.ycor(),
-                    radius, half, startTurtle.heading())) {
-                  result.add(patch);
-                  break outer;
-                }
+    for (int i = 0; i < curr; i++) {
+      Patch patch = patches[i];
+      // incone is optimized assuming a torus world making incone use the topology properly
+      // will require a significant re-write. maybe it's  candidate for optimizations
+      // for each topology.  ev 9/5/05
+      if (patch != null) {
+        if (sourceSet.kind() == AgentKindJ.Patch()) {
+          // loop through our world copies
+          outer:
+          for (int worldOffsetX = -m; worldOffsetX <= m; worldOffsetX++) {
+            for (int worldOffsetY = -n; worldOffsetY <= n; worldOffsetY++) {
+              if ((sourceSet == world.patches() || cachedIDs.contains(new Long(patch.id())))
+                  && isInCone(patch.pxcor + worldWidth * worldOffsetX,
+                  patch.pycor + worldHeight * worldOffsetY,
+                  startTurtle.xcor(), startTurtle.ycor(),
+                  radius, half, startTurtle.heading())) {
+                result.add(patch);
+                break outer;
               }
             }
-          } else {
-            // Only check patches that might have turtles within the radius on them.
-            // The 1.415 (square root of 2) adjustment is necessary because it is
-            // possible for portions of a patch to be within the circle even though
-            // the center of the patch is outside the circle.  Both turtles, the
-            // turtle in the center and the turtle in the agentset, can be as much
-            // as half the square root of 2 away from its patch center.  If they're
-            // away from the patch centers in opposite directions, that makes a total
-            // of square root of 2 additional distance we need to take into account.
-            if (world.rootsTable().gridRoot(dx * dx + dy * dy) <= radius + 1.415) {
-              for (Turtle turtle : patch.turtlesHere()) {
-                // loop through our world copies
-                outer:
-                for (int worldOffsetX = -m; worldOffsetX <= m; worldOffsetX++) {
-                  for (int worldOffsetY = -n; worldOffsetY <= n; worldOffsetY++) {
-                    // any turtle set with a non-null print name is either
-                    // the set of all turtles, or a breed agentset - ST 2/19/04
-                    if ((sourceSet == world.turtles()
-                            || (sourceSet.isBreedSet()  && sourceSet == turtle.getBreed())
-                            || cachedIDs.contains(new Long(turtle.id())))
-                            && isInCone(turtle.xcor() + worldWidth * worldOffsetX,
-                                        turtle.ycor() + worldHeight * worldOffsetY,
-                                        startTurtle.xcor(), startTurtle.ycor(),
-                                        radius, half, startTurtle.heading())) {
-                      result.add(turtle);
-                      break outer;
-                    }
+          }
+        } else {
+          // Only check patches that might have turtles within the radius on them.
+          // The 1.415 (square root of 2) adjustment is necessary because it is
+          // possible for portions of a patch to be within the circle even though
+          // the center of the patch is outside the circle.  Both turtles, the
+          // turtle in the center and the turtle in the agentset, can be as much
+          // as half the square root of 2 away from its patch center.  If they're
+          // away from the patch centers in opposite directions, that makes a total
+          // of square root of 2 additional distance we need to take into account.
+          // TODO fix this:
+//          if (world.rootsTable().gridRoot(dx * dx + dy * dy) <= radius + 1.415) {
+            for (Turtle turtle : patch.turtlesHere()) {
+              // loop through our world copies
+              outer:
+              for (int worldOffsetX = -m; worldOffsetX <= m; worldOffsetX++) {
+                for (int worldOffsetY = -n; worldOffsetY <= n; worldOffsetY++) {
+                  // any turtle set with a non-null print name is either
+                  // the set of all turtles, or a breed agentset - ST 2/19/04
+                  if ((sourceSet == world.turtles()
+                          || (sourceSet.isBreedSet()  && sourceSet == turtle.getBreed())
+                          || cachedIDs.contains(new Long(turtle.id())))
+                          && isInCone(turtle.xcor() + worldWidth * worldOffsetX,
+                                      turtle.ycor() + worldHeight * worldOffsetY,
+                                      startTurtle.xcor(), startTurtle.ycor(),
+                                      radius, half, startTurtle.heading())) {
+                    result.add(turtle);
+                    break outer;
                   }
                 }
               }
             }
-          }
+//          }
         }
       }
     }
+
     return result;
   }
 
