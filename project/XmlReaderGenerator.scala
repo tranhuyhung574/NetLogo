@@ -912,10 +912,12 @@ object XmlReaderGenerator {
       tpe match {
         case DataType.String                                    =>
           exp.applyTo(generateAndAddElement(_), ElementType)
-        case DataType.Integer                                   =>
+        case DataType.Integer | DataType.Boxed(DataType.Boolean) =>
           exp.applyTo((s: String) => s"${s}.toString").applyTo(generateAndAddElement(_), ElementType)
-        case DataType.Boxed(DataType.Double | DataType.Boolean) =>
-          exp.applyTo((s: String) => s"${s}.toString").applyTo(generateAndAddElement(_), ElementType)
+        case DataType.Boxed(DataType.Double) =>
+          exp
+            .applyTo((s: String) => s"XmlReader.formatDouble(${s})")
+            .applyTo(generateAndAddElement(_), ElementType)
         case DataType.DeferredType(tName)        =>
           exp.applyTo(writeType(tName, types(tName).typeName), ElementType)
         case DataType.NestedComplexType(content) =>
@@ -954,6 +956,7 @@ object XmlReaderGenerator {
             s"${typeName}ToString(${v})"
           case DataType.Points =>
             s"""${v}.map(t => t._1 + "," + t._2).mkString(" ")"""
+          case DataType.Double => s"XmlReader.formatDouble(${v})"
           case _ => s"${v}.toString"
         }
       }

@@ -132,7 +132,18 @@ object XmlReader {
   }
 
   def dashArrayToString(a: Seq[Float]): String = {
-    a.map(_.toString).mkString(",")
+    a.map(formatFloat _).mkString(",")
+  }
+
+  // get exact reproducibility between JVM and JS runtimes
+  def formatDouble(d: Double): String = {
+    if (d.toInt == d) "%.1f".format(d)
+    else              d.toString
+  }
+
+  def formatFloat(f: Float): String = {
+    if (f.toInt == f) "%.1f".format(f)
+    else              f.toString
   }
 
   private def hexColorToRgbColor(keyName: String)(hexString: String): Validated[ParseError, RgbColor] = {

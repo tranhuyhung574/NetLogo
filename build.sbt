@@ -284,12 +284,15 @@ lazy val parser = CrossProject("parser", file("."),
   settings(commonSettings: _*).
   settings(scalaSettings: _*).
   settings(scalastyleSettings: _*).
+  settings(XmlReaderGenerator.parserSettings: _*).
   settings(
     isSnapshot := true,
     name := "parser",
     version := "0.2.0",
     unmanagedSourceDirectories in Compile += baseDirectory.value.getParentFile / "parser-core" / "src" / "main",
-    unmanagedSourceDirectories in Test    += baseDirectory.value.getParentFile / "parser-core" / "src" / "test").
+    unmanagedSourceDirectories in Test    += baseDirectory.value.getParentFile / "parser-core" / "src" / "test",
+    autogenRoot     := baseDirectory.value.getParentFile / "autogen"
+    ).
   jsConfigure(_.dependsOn(sharedResources % "compile-internal->compile")).
   jsConfigure(_.dependsOn(macros % "compile-internal->compile;test-internal->compile")).
   jsSettings(publicationSettings("NetLogoHeadless"): _*).
@@ -304,14 +307,13 @@ lazy val parser = CrossProject("parser", file("."),
           "org.scala-lang.modules"   %%%! "scala-parser-combinators" % "1.0.5",
           "org.scalatest"  %%%! "scalatest" % "3.0.0" % "test",
           // scalatest doesn't yet play nice with scalacheck 1.13.0
-          "org.scalacheck" %%%! "scalacheck" % "1.13.4" % "test"
+          "org.scalacheck" %%%! "scalacheck" % "1.13.4" % "test",
+          "org.typelevel"  %%%! "cats-core" % "1.0.0-MF"
       )}).
   jvmConfigure(_.dependsOn(sharedResources)).
   jvmSettings(jvmSettings: _*).
   jvmSettings(scalatestSettings: _*).
-  jvmSettings(XmlReaderGenerator.parserSettings: _*).
   jvmSettings(
-      autogenRoot     := baseDirectory.value.getParentFile / "autogen",
       mappings in (Compile, packageBin) ++= mappings.in(sharedResources, Compile, packageBin).value,
       mappings in (Compile, packageSrc) ++= mappings.in(sharedResources, Compile, packageSrc).value,
       libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5",
